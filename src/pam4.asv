@@ -40,7 +40,6 @@ stem(m, a)
 title('4-PAM TX - Random Source')
 xlabel('Samples')
 ylabel('Symbols')
-xlim([tmin tmax])
 %% Raised cosine filter
 g = @(t,a) sinc(t/T) .* (cos(a*pi*t/T) ./ (1 - (2*a*t/T).^2));
 
@@ -74,13 +73,12 @@ t2 = linspace(2*tmin, 2*tmax, 2*(tmax-tmin)*samples_per_second - 1);
 
 figure()
 hold on
-% stem(t,am)
-stem(m,a)
 plot(t2,s)
+stem(m,a)
+% stem(t,am)
 hold off
-xlim([min(t) max(t2)])
 %%  PAM-4 Receiver
-N = 0.1*(2*max(s)); % noise amplitude
+N = 0.5*max(s); % noise amplitude
 %n = N*gaussmf(t2, [0.5 5]);
 n = N*rand(1, length(t2));
 figure()
@@ -89,7 +87,6 @@ plot(t2, n)
 r = s+n;
 figure()
 plot(t2,r)
-xlim([min(t) max(t2)])
 %%
 h = conj( g(-t, alpha) );
 figure()
@@ -100,48 +97,28 @@ ylabel('g*(-t)')
 %% 
 t3 = linspace(3*tmin, 3*tmax, 3*(tmax-tmin)*samples_per_second - 2);
 % t3 = linspace(3*tmin, 3*tmax, 4*(tmax-tmin/2)*samples_per_second - 1);
-
 y = conv(r, h);
-norm_y = y.*max(symbols_set)./max(y);
-
 figure()
 hold on
+plot(t2,s)
 stem(m,a)
-plot(t3, norm_y)
-hold off
-xlim([min(t) max(t2)])
+% stem(t,am)
+
+plot(t3, y)
 %%
-xmin = 0;
-xmax = 10;
-
-ymin = min([min(s) min(r) min(norm_y)]); % signal + noise
-ymax = max([max(s) max(r) max(norm_y)]);
-
 figure()
 subplot(411)
 stem(m,a)
-grid on
-xlim([xmin xmax])
-ylim([ymin ymax])
-title('1: Source Symbols')
+title('Source Symbols')
 subplot(412)
 plot(t2,s)
-xlim([xmin xmax])
-ylim([ymin ymax])
-grid on
-title('2: Transmitted Signal')
+title('Transmitted Signal')
 subplot(413)
 plot(t2, r)
-xlim([xmin xmax])
-ylim([ymin ymax])
-grid on
-title('3: Received Signal')
+title('Received Signal')
 subplot(414)
-plot(t3, norm_y)
-xlim([xmin xmax])
-ylim([ymin ymax])
-grid on
-title('4: Filtered Signal')
+plot(t3, y)
+title('Filtered Signal')
 
 %% slicer
 for R = 1:length(t3)
