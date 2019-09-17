@@ -1,9 +1,17 @@
 %% PAM-4 Transmitter
 % gpaulino
-clc; clear all; close all;
+clc; clearvars; close all;
+
+%% Extra information
+% fc = 440
+%
+% sample rate
+% fs = 8192
+
+
 %% User parameters
 % transmitter
-symbols = 9; % mapped
+num_symbols = 9; % mapped
 T = 1;        % period in seconds
 symbols_set = [-3, -1, 1, 3];
 
@@ -22,7 +30,7 @@ A_norm = 1.25; % normalization gain
 plot_en = true; % enable plot
 
 %% user parameter conscistency self-check
-assert(symbols*T < time_interval, 'number of symbols must fit in the time interval')
+assert(num_symbols*T < time_interval, 'number of symbols must fit in the time interval')
 
 
 %% Time vector
@@ -32,9 +40,9 @@ t = linspace(tmin, tmax, (tmax-tmin)*samples_per_second);
 t0 = ((tmax-tmin)/2)*samples_per_second + 1; % initial time
 
 %% TX Source + Mapper
-a = randsrc(1, symbols, symbols_set); % random symbols source
-m = linspace(1, symbols, symbols);  % spacing vector discrete in time
-k = linspace(t0 + T*samples_per_second, length(t)-samples_per_second+1, symbols);  % spacing vector continuous in time
+a = randsrc(1, num_symbols, symbols_set); % random symbols source
+m = linspace(1, num_symbols, num_symbols);  % spacing vector discrete in time
+k = linspace(t0 + T*samples_per_second, length(t)-samples_per_second+1, num_symbols);  % spacing vector continuous in time
 
 am = zeros(1, length(t)); % spaced symbols
 am(k) = a;
@@ -179,8 +187,8 @@ if (plot_en)
     title('4: Filtered Signal')
 end
 %% quantization
-m3 = linspace(1, symbols, symbols);
-k3 = linspace(t0_3 + T*samples_per_second, 2*length(t)-samples_per_second+1, symbols);  
+m3 = linspace(1, num_symbols, num_symbols);
+k3 = linspace(t0_3 + T*samples_per_second, 2*length(t)-samples_per_second+1, num_symbols);  
 fm = norm_y(k3); % sampled levels
 
 if (plot_en)
@@ -220,4 +228,4 @@ end
 disp(['input:  ' num2str(a)])
 disp(['output: ' num2str(out)])
 err = sum(ne(a,out));
-disp(['errors: ' num2str(err) ' out of total ' num2str(symbols) ' symbols'])
+disp(['errors: ' num2str(err) ' out of total ' num2str(num_symbols) ' symbols'])
