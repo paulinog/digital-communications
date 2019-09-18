@@ -1,7 +1,6 @@
 %% PAM-4 Transmitter
 % gpaulino
 clc; clearvars; close all;
-tic;
 %% Extra information
 % fc = 440
 %
@@ -27,6 +26,9 @@ A_norm = 1.25; % normalization gain
 
 % general
 plot_en = true; % enable plot
+
+%% Start a stopwatch timer
+tic;
 
 %% Time vector
 time_interval = len_src_sym +1;
