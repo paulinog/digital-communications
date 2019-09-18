@@ -1,23 +1,22 @@
 %% PAM-4 Transmitter
 % gpaulino
 clc; clearvars; close all;
-
+tic;
 %% Extra information
 % fc = 440
 %
 % sample rate
 % fs = 8192
 
-
 %% User parameters
 % transmitter
-num_symbols = 9; % mapped
+len_src_sym = 10; % mapped
 T = 1;        % period in seconds
 symbols_set = [-3, -1, 1, 3];
 
 alpha = 0; % raised cossine alpha
 
-time_interval = 10; % seconds
+% time_interval = 10; % seconds
 samples_per_second = 1000; % samples
 
 % channel
@@ -29,20 +28,18 @@ A_norm = 1.25; % normalization gain
 % general
 plot_en = true; % enable plot
 
-%% user parameter conscistency self-check
-assert(num_symbols*T < time_interval, 'number of symbols must fit in the time interval')
-
-
 %% Time vector
+time_interval = len_src_sym +1;
+
 tmin = -time_interval;
 tmax = time_interval;
 t = linspace(tmin, tmax, (tmax-tmin)*samples_per_second);
 t0 = ((tmax-tmin)/2)*samples_per_second + 1; % initial time
 
 %% TX Source + Mapper
-a = randsrc(1, num_symbols, symbols_set); % random symbols source
-m = linspace(1, num_symbols, num_symbols);  % spacing vector discrete in time
-k = linspace(t0 + T*samples_per_second, length(t)-samples_per_second+1, num_symbols);  % spacing vector continuous in time
+a = randsrc(1, len_src_sym, symbols_set); % random symbols source
+m = linspace(1, len_src_sym, len_src_sym);  % spacing vector discrete in time
+k = linspace(t0 + T*samples_per_second, length(t)-samples_per_second+1, len_src_sym);  % spacing vector continuous in time
 
 am = zeros(1, length(t)); % spaced symbols
 am(k) = a;
@@ -187,8 +184,8 @@ if (plot_en)
     title('4: Filtered Signal')
 end
 %% quantization
-m3 = linspace(1, num_symbols, num_symbols);
-k3 = linspace(t0_3 + T*samples_per_second, 2*length(t)-samples_per_second+1, num_symbols);  
+m3 = linspace(1, len_src_sym, len_src_sym);
+k3 = linspace(t0_3 + T*samples_per_second, 2*length(t)-samples_per_second+1, len_src_sym);  
 fm = norm_y(k3); % sampled levels
 
 if (plot_en)
@@ -228,4 +225,6 @@ end
 disp(['input:  ' num2str(a)])
 disp(['output: ' num2str(out)])
 err = sum(ne(a,out));
-disp(['errors: ' num2str(err) ' out of total ' num2str(num_symbols) ' symbols'])
+disp(['errors: ' num2str(err) ' out of total ' num2str(len_src_sym) ' symbols'])
+%% end section
+toc;
