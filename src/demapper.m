@@ -2,7 +2,7 @@ function out_array = demapper(z, symbols_set)
 %DEMAPPER Demapeador de simbolos para bits
 
 M = length(symbols_set);
-b=log2(M);
+b = log2(M);
 len_src = length(z);
 out_index = zeros(1, len_src);
 

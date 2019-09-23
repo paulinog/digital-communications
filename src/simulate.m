@@ -3,7 +3,7 @@
 % Guilherme Paulino, RA 117119
 clc;
 clearvars;
-close all;
+% close all;
 disp('Final Project (IE533)')
 %%  Parametros de Usuario
 VERBOSE = false; % imprimir textos de log no Command Window a cada procedimento
@@ -19,19 +19,24 @@ symbols_set = [-3, -1, 1, 3];
 % input_str = input('','s');
 
 % Entrada de teste
-input_str = 'abcdefghijklmnopqrstuvxzwyABCDEFGHIJKLMNOPQRSTUVXZWY1234567890';
-% input_str = 'A';
+% input_str = 'abcdefghijklmnopqrstuvxzwyABCDEFGHIJKLMNOPQRSTUVXZWY1234567890';
+input_str = 'K';
 
 % Inicia um stopwatch timer
 tic;
 
+%%
+% example 16-QAM
+% https://www.mathworks.com/help/comm/ug/pulse-shaping-using-a-raised-cosine-filter.html
+
+err = 0;
 for i = 1 : length(input_str)
     % Vetor binario
     array_bin = str_source(input_str(i));
     %% Mapeador
     a = mapper(array_bin, symbols_set);
     %% Filtro Formatador de Pulso
-    % https://www.mathworks.com/help/comm/ug/pulse-shaping-using-a-raised-cosine-filter.html
+    
     %% Moduador
     % s = mod_pam4(a);
     %% Canal
@@ -42,6 +47,7 @@ for i = 1 : length(input_str)
     %% Demapeador
     out_array = demapper(z, symbols_set);
     %% Destino
+    err = err + biterr(array_bin, out_array);
     text_output = str_dest(out_array);
     % Mostra a saida de texto
     %disp('-----')
@@ -50,8 +56,11 @@ for i = 1 : length(input_str)
     fprintf('%s', text_output)
 end % end for-loop
 
-% Para o stopwatch timer
+%%
 disp(' ')
 disp('-----')
+% Calcula a taxa de erro de bit
+disp(['Bit error rate: ' num2str(err)])
+% Para o stopwatch timer
 disp('Total time to compute:');
 toc;
