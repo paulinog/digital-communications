@@ -1,6 +1,5 @@
 function text_output = str_dest(array_bin)
-%STRING DESTINATION Receive a binary array and converts it to a text output
-% as concateneted strings
+%STRING_DESTINATION Recebe um vetor binario e converte em texto
 
 len_src = length(array_bin);
 

@@ -9,7 +9,7 @@ clc; clearvars; close all;
 
 %% User parameters
 % transmitter
-len_src_sym = 400; % mapped
+len_src_sym = 4; % mapped
 T = 1;        % period in seconds
 symbols_set = [-3, -1, 1, 3];
 
@@ -22,10 +22,10 @@ samples_per_second = 1000; % samples
 N0 = 0.1; % noise amplitude (Vpp ratio of the received signal)
 
 % receiver
-A_norm = 1.25; % normalization gain
+% A_norm = 1.25; % normalization gain
 
 % general
-plot_en = true; % enable plot
+plot_en = false; % enable plot
 
 %% Start a stopwatch timer
 tic;
@@ -233,6 +233,10 @@ end
 disp(['input:  ' num2str(a)])
 disp(['output: ' num2str(out)])
 err = sum(ne(a,out));
-disp(['errors: ' num2str(err) ' out of total ' num2str(len_src_sym) ' symbols'])
+if (err == 0)
+    disp(['errors: ' num2str(err) ' out of total ' num2str(len_src_sym) ' symbols'])
+else
+    error(['errors: ' num2str(err) ' out of total ' num2str(len_src_sym) ' symbols'])
+end
 %% end section
 toc;
