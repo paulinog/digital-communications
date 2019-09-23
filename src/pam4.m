@@ -9,7 +9,7 @@ clc; clearvars; close all;
 
 %% User parameters
 % transmitter
-len_src_sym = 10; % mapped
+len_src_sym = 400; % mapped
 T = 1;        % period in seconds
 symbols_set = [-3, -1, 1, 3];
 
@@ -138,7 +138,13 @@ if (plot_en)
 end
 %% normalize
 y = conv(r, h);
-norm_y = y.*A_norm*max(symbols_set)./max(abs(y));
+
+norm_y = y;
+pos_y_ratio = abs(max(r)/max(y));
+neg_y_ratio = abs(min(r)/min(y));
+
+norm_y(norm_y > 0) = norm_y(norm_y > 0) .* pos_y_ratio;
+norm_y(norm_y < 0) = norm_y(norm_y < 0) .* neg_y_ratio;
 
 t3 = linspace(3*tmin, 3*tmax, 3*(tmax-tmin)*samples_per_second - 2);
 t0_3 = (((3*tmax)-(3*tmin))/2)*samples_per_second + 1; % sync point

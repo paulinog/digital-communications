@@ -13,6 +13,7 @@ OPEN_PLOT = false; % abrir janelas de gráficos
 % A) PAM-4
 symbols_set = [-3, -1, 1, 3];
 
+% while true
 %% Fonte
 % Entrada de texto pelo usuario
 disp('Enter text:');
@@ -44,3 +45,4 @@ toc;
 disp('-----')
 disp('Output text:');
 disp(text_output)
+% end % end-while
