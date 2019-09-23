@@ -20,9 +20,12 @@ symbols_set = [-3, -1, 1, 3];
 
 % Entrada de teste
 input_str = 'abcdefghijklmnopqrstuvxzwyABCDEFGHIJKLMNOPQRSTUVXZWY1234567890';
+% input_str = 'A';
+
+% Inicia um stopwatch timer
+tic;
+
 for i = 1 : length(input_str)
-    % Inicia um stopwatch timer
-    tic;
     % Vetor binario
     array_bin = str_source(input_str(i));
     %% Mapeador
@@ -40,12 +43,15 @@ for i = 1 : length(input_str)
     out_array = demapper(z, symbols_set);
     %% Destino
     text_output = str_dest(out_array);
-    % Para o stopwatch timer
-    disp('-----')
-    disp('Total time to compute:');
-    toc;
     % Mostra a saida de texto
-    disp('-----')
-    disp('Output text:');
-    disp(text_output)
+    %disp('-----')
+    %disp('Output text:');
+    %disp(text_output)
+    fprintf('%s', text_output)
 end % end for-loop
+
+% Para o stopwatch timer
+disp(' ')
+disp('-----')
+disp('Total time to compute:');
+toc;
