@@ -1,5 +1,6 @@
 function a = mapper(array_bin, symbols_set)
-%MAPPER
+%MAPPER Mapeador de bits para simbolos
+
 %% OOK
 % M=2;
 % symbols_set = [0, 1];

@@ -1,41 +1,46 @@
-%% Start Simulation
-% Disciplina IE533A/2s2019
+%% Run Simulation
+% Disciplina IE533A, 2s2019 (FEEC/UNICAMP)
 % Guilherme Paulino, RA 117119
-clc; clearvars; close all;
+% clc;
+clearvars;
+close all;
 disp('Final Project (IE533)')
-%%  User parameters
-VERBOSE = false;
+%%  Parametros de Usuario
+VERBOSE = false; % imprimir textos de log no Command Window a cada procedimento
+OPEN_PLOT = false; % abrir janelas de gráficos
 
-%% Modulation Proprierties (4-PAM)
+%% Propriedades de Modulacao
+% A) PAM-4
 symbols_set = [-3, -1, 1, 3];
 
-
-%% Source
-% Text input by the user
+%% Fonte
+% Entrada de texto pelo usuario
 disp('Enter text:');
 array_bin = str_source();
-% Start a stopwatch timer
+% Inicia um stopwatch timer
 tic;
 
-%% Mapper
+%% Mapeador
 a = mapper(array_bin, symbols_set);
-
-%% Modulator
+%% Filtro Formatador de Pulso
+% https://www.mathworks.com/help/comm/ug/pulse-shaping-using-a-raised-cosine-filter.html
+%% Moduador
 % s = mod_pam4(a);
-%% Channel
+%% Canal
 % r = s+n;
 z = a;
-%% Demodulator
-%% Demapper
+%% Demodulador
+% z = demod_pam4(r);
+%% Demapeador
 out_array = demapper(z, symbols_set);
 
-%% Destination
+%% Destino
 text_output = str_dest(out_array);
-% Stop stopwatch timer
+% Para o stopwatch timer
 disp('-----')
 disp('Total time to compute:');
 toc;
-% Displays text output
+% Mostra a saida de texto
 disp('-----')
 disp('Output text:');
 disp(text_output)

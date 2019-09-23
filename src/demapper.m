@@ -1,5 +1,5 @@
 function out_array = demapper(z, symbols_set)
-%DEMAPPER
+%DEMAPPER Demapeador de simbolos para bits
 
 len_src = length(z);
 out_index = zeros(1, len_src);

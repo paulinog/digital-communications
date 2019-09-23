@@ -1,5 +1,6 @@
 function s = mod_pam4(a)
-%UNTITLED6 Summary of this function goes here
+%MOD_PAM4 Modulador para formato "Pulse Amplitude Modulation" (PAM) com
+% 4-niveis
 
 %% User parameters
 % transmitter
