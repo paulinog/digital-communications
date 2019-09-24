@@ -35,10 +35,8 @@ for i = 1 : length(input_str)
     array_bin = str_source(input_str(i));
     %% Mapeador
     a = mapper(array_bin, symbols_set);
-    %% Filtro Formatador de Pulso
-    
     %% Modulador
-    s = mod_pam4(a);
+    [s, t] = mod_pam4(a);
     %% Canal
     % r = s+n;
     z = a;
