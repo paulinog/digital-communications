@@ -7,7 +7,7 @@ clearvars;
 disp('Final Project (IE533)')
 %%  Parametros de Usuario
 VERBOSE = false; % imprimir textos de log no Command Window a cada procedimento
-OPEN_PLOT = false; % abrir janelas de gráficos
+OPEN_PLOT = false; % abrir janelas de graficos
 
 %% Propriedades de Modulacao
 % A) PAM-4
