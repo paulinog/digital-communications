@@ -45,7 +45,7 @@ raised_cosine = @(t,a) sinc(t/T) .* (cos(a*pi*t/T) ./ (1 - (2*a*t/T).^2));
 % square_wave = @(t) %TODO: implementar
 
 %% Sinal formatador de pulso
-alpha = 0.5;
+alpha = 0.25;
 gt = raised_cosine(t, alpha);
 
 %% Pulsos formatados
@@ -64,9 +64,9 @@ if (plot_en)
 %     plot(t2, s_conv)
     plot(t, s)
     xlim([0 tmax])
-    title('PAM-4 TX - Shaped Pulses')
+    title('TX Shaped Pulses (PAM-4)')
     xlabel('Time')
-    ylabel('s(t)')
+    legend('a(k)', 's(t)')
     hold off
 end
 

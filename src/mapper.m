@@ -11,7 +11,7 @@ function a = mapper(array_bin, symbols_set)
 
 %% symbol mapper
 M = length(symbols_set);
-b=log2(M);
+b = log2(M);
 len_src = length(array_bin);
 
 a_mapped = reshape(array_bin, [b, len_src/b])';
