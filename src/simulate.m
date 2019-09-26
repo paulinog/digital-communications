@@ -32,26 +32,25 @@ tic;
 err = 0;
 for i = 1 : length(input_str)
     % Vetor binario
-    array_bin = str_source(input_str(i));
+    input_bin = str_source(input_str(i));
     %% Mapeador
-    a = mapper(array_bin, symbols_set);
+    a = mapper(input_bin, symbols_set);
     %% Modulador
     [s, t] = mod_pam4(a);
     %% Canal
-    % r = s+n;
-    z = a;
+    % r = s + n;
     %% Demodulador
     % z = demod_pam4(r);
     %% Demapeador
-    out_array = demapper(z, symbols_set);
+    output_bin = demapper(a, symbols_set);
     %% Destino
-    err = err + biterr(array_bin, out_array);
-    text_output = str_dest(out_array);
+    err = err + biterr(input_bin, output_bin);
+    output_str = str_dest(output_bin);
     % Mostra a saida de texto
     %disp('-----')
     %disp('Output text:');
     %disp(text_output)
-    fprintf('%s', text_output)
+    fprintf('%s', output_str)
 end % end for-loop
 
 %%
