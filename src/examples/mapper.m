@@ -1,4 +1,5 @@
 %% Exemplo - Projeto Final IE533
+% gpaulino
 clc; clearvars; close all;
 disp('Final Project (IE533)')
 %% Source
