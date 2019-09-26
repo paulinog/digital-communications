@@ -1,6 +1,7 @@
 %% PAM-4 Transmitter
 % gpaulino
 clc; clearvars; close all;
+disp('PAM-4 example')
 %% Extra information
 % fc = 440
 %
@@ -9,11 +10,11 @@ clc; clearvars; close all;
 
 %% User parameters
 % transmitter
-len_sym = 4; % mapped
+len_sym = 4; % mapped symbols
 
 symbols_set = [-3, -1, 1, 3];
 
-alpha = 0.5; % raised cossine alpha
+alpha = 0.25; % raised cossine alpha
 
 % time_interval = 10; % seconds
 fs = 1000; % sampling rate
@@ -23,10 +24,14 @@ R = fc; % symbol transmission rate
 T = 1/R; % symbol period
 
 % channel
-N0 = 0.1; % noise amplitude (Vpp ratio of the received signal)
+% noise amplitude (Vpp ratio of the received signal)
+% N0 = 0; 
+N0 = 0.1;
+% N0 = 0.5;
 
 % general
-plot_en = true; % enable plot
+plot_en = true;
+plot_en_all = true;
 
 %% Start a stopwatch timer
 tic;
@@ -47,19 +52,21 @@ am = zeros(1, length(t)); % spaced symbols
 am(m) = a;
 
 if (plot_en)
-    figure()
     % spacing vector discrete in time
     k = linspace(T, T * len_sym, len_sym);
-    stem(k, a) 
-    title('TX Random Symbols Source (4-levels)')
-    xlabel('Samples')
-    ylabel('Symbols')
-    xlim([tmin tmax])
+    if (plot_en_all)
+        figure()
+        stem(k, a) 
+        title('TX Random Symbols Source (4-levels)')
+        xlabel('Samples')
+        ylabel('Symbols')
+        xlim([0 tmax])
+    end
 end
 %% TX Raised cosine filter
 g = @(t,a) sinc(t/T) .* (cos(a*pi*t/T) ./ (1 - (2*a*t/T).^2));
 
-if (plot_en)
+if (plot_en && plot_en_all)
     alphas = [0, 0.5, 0.8, 1]; % example figure
     figure()
     subplot(221)
@@ -80,7 +87,7 @@ end
 %% TX Pulse Shape Filter
 gt = g(t, alpha);
 
-if (plot_en)
+if (plot_en && plot_en_all)
     figure()
     plot(t, gt)
     title(['TX Pulse Shape Filter - Raised cosine (\alpha=' num2str(alpha) ')'])
@@ -97,18 +104,19 @@ if (plot_en)
     % stem(t,am)
     stem(k,a)
     plot(t2,s)
-    xlim([min(t) max(t2)])
+    xlim([0 tmax])
     title('TX Shaped Pulses (PAM-4)')
     xlabel('Time')
-    ylabel('s(t)')
+    legend('a(k)', 's(t)')
     hold off
+    movegui('northwest')
 end
 %% Channel
 N = N0*(2*max(s)); % noise amplitude
 %n = N*gaussmf(t2, [0.5 5]);
 n = N*rand(1, length(t2));
 
-if (plot_en)
+if (plot_en && plot_en_all)
     figure()
     plot(t2, n)
     xlim([tmin tmax])
@@ -119,7 +127,7 @@ end
 %% RX Received Signals
 r = s+n;
 
-if (plot_en)
+if (plot_en && plot_en_all)
     figure()
     plot(t2,r)
     xlim([min(t) max(t2)])
@@ -130,7 +138,7 @@ end
 %% RX Matched Filter
 h = conj( g(-t, alpha) );
 
-if (plot_en)
+if (plot_en && plot_en_all)
     figure()
     plot(t,h)
     title(['RX Matched Filter - Raised cosine (\alpha=' num2str(alpha) ')'])
@@ -141,15 +149,17 @@ end
 y = conv(r, h);
 
 t3 = linspace(3*tmin, 3*tmax, 3*(tmax-tmin)*fs - 2);
-t0_3 = (((3*tmax)-(3*tmin))/2)*fs + 1; % sync point
+t0_3 = (((3*tmax)-(3*tmin))/3)*fs + 1;
 
-norm_y = y;
-% norm_y = y - abs(y(t0_3));
 pos_y_ratio = abs(max(r)/max(y));
 neg_y_ratio = abs(min(r)/min(y));
+y_ratio = (pos_y_ratio + neg_y_ratio)/2;
 
-norm_y(norm_y > 0) = norm_y(norm_y > 0) .* pos_y_ratio;
-norm_y(norm_y < 0) = norm_y(norm_y < 0) .* neg_y_ratio;
+% norm_y = y;
+norm_y = y - y(t0_3);
+% norm_y(norm_y > 0) = norm_y(norm_y > 0) .* pos_y_ratio;
+% norm_y(norm_y < 0) = norm_y(norm_y < 0) .* neg_y_ratio;
+norm_y = norm_y .* y_ratio;
 
 if (plot_en)
     figure()
@@ -159,14 +169,15 @@ if (plot_en)
     title('RX Normalized Signal')
     xlabel('Time')
     legend('a(k)','norm\_y(t)')
-    xlim([min(t) max(t2)])
+    xlim([0 tmax])
     hold off
+    movegui('southwest')
 end
 %% TX/RX Signals
 
-if (plot_en)
+if (plot_en && plot_en_all)
     xmin = 0;
-    xmax = 10;
+    xmax = tmax;
 
     ymin = min([min(s) min(r) min(norm_y)]); % signal + noise
     ymax = max([max(s) max(r) max(norm_y)]);
@@ -204,7 +215,9 @@ if (plot_en)
 end
 %% RX Quantization
 m3 = linspace(1, len_sym, len_sym);
-k3 = linspace(t0_3 + T*fs, 2*length(t)-fs+1, len_sym);  
+
+t3_2 = (((3*tmax)-(3*tmin))/2)*fs + 1;
+k3 = linspace(t3_2 + T*fs, 2*length(t)-fs+1, len_sym);  
 fm = norm_y(k3); % sampled levels
 
 if (plot_en)
@@ -213,10 +226,11 @@ if (plot_en)
     stem(m3, fm)
     plot(t3, norm_y)
     legend('f(k) = norm\_y(t=kT)','norm\_y(t)')
-    xlim([0 max(t)])
+    xlim([0 tmax])
     xlabel('Time')
     title('RX Quantization')
     hold off
+    movegui('northeast')
 end
 %% RX Slicer
 out = zeros(1, length(fm));
@@ -243,16 +257,20 @@ if (plot_en)
     xlim([0 tmax])
     legend('a(k)', 'â(k)')
     title('RX Slicer')
+    xlabel('Time')
     hold off
+    movegui('southeast')
 end
-%%
+%% end section
 disp(['input:  ' num2str(a)])
 disp(['output: ' num2str(out)])
 err = sum(ne(a,out));
+
+% stopwatch timer
+toc;
+
 if (err == 0)
     disp(['errors: ' num2str(err) ' out of total ' num2str(len_sym) ' symbols'])
 else
     error(['errors: ' num2str(err) ' out of total ' num2str(len_sym) ' symbols'])
 end
-%% end section
-toc;
