@@ -1,6 +1,7 @@
 %% PAM-4 Transmitter
 % gpaulino
-clc; clearvars; close all;
+clc; clearvars;
+% close all;
 disp('PAM-4 example')
 %% Extra information
 % fc = 440
@@ -17,11 +18,14 @@ symbols_set = [-3, -1, 1, 3];
 alpha = 0.25; % raised cossine alpha
 
 % time_interval = 10; % seconds
-fs = 1000; % sampling rate
+fs = 1000; % sampling rate (Hz)
 
 fc = 1; % carrier frequency
-R = fc; % symbol transmission rate
-T = 1/R; % symbol period
+% R = fc; % symbol transmission rate
+% T = 1/R; % symbol period
+
+T = 1/fc;
+R = 1/((1+alpha)*T);
 
 % channel
 % noise amplitude (Vpp ratio of the received signal)
@@ -37,7 +41,7 @@ plot_en_all = true;
 tic;
 
 %% Time vector
-time_interval = (len_sym +1) * T;
+time_interval = (len_sym +1) * (1/R);
 tmin = -time_interval;
 tmax = time_interval;
 
@@ -46,14 +50,14 @@ t0 = fs * (tmax-tmin)/2 + 1; % initial time
 
 %% TX Source + Mapper
 a = randsrc(1, len_sym, symbols_set); % random symbols source
-m = linspace(t0 + T*fs, t0 + T*fs*len_sym, len_sym); % spacing vector continuous in time
+m = linspace(t0 + (1/R)*fs, t0 + (1/R)*fs*len_sym, len_sym); % spacing vector continuous in time
 
 am = zeros(1, length(t)); % spaced symbols
 am(m) = a;
 
 if (plot_en)
     % spacing vector discrete in time
-    k = linspace(T, T * len_sym, len_sym);
+    k = linspace((1/R), (1/R) * len_sym, len_sym);
     if (plot_en_all)
         figure()
         stem(k, a) 
@@ -67,7 +71,7 @@ end
 g = @(t,a) sinc(t/T) .* (cos(a*pi*t/T) ./ (1 - (2*a*t/T).^2));
 
 if (plot_en && plot_en_all)
-    alphas = [0, 0.5, 0.8, 1]; % example figure
+    alphas = [0, 0.25, 0.5, 1]; % example figure
     figure()
     subplot(221)
     plot(t, g(t, alphas(1)))
@@ -166,6 +170,7 @@ if (plot_en)
     hold on
     stem(k,a)
     plot(t3, norm_y)
+%     plot(t3, y)
     title('RX Normalized Signal')
     xlabel('Time')
     legend('a(k)','norm\_y(t)')
@@ -214,10 +219,11 @@ if (plot_en && plot_en_all)
     xlabel('Time')
 end
 %% RX Quantization
-m3 = linspace(1, len_sym, len_sym);
+m3 = linspace((1/R), (1/R) * len_sym, len_sym);
+% m3 = linspace(1, len_sym, len_sym);
 
 t3_2 = (((3*tmax)-(3*tmin))/2)*fs + 1;
-k3 = linspace(t3_2 + T*fs, 2*length(t)-fs+1, len_sym);  
+k3 = linspace(t3_2 + (1/R)*fs, 2*length(t)-(1/R)*fs+1, len_sym);  
 fm = norm_y(k3); % sampled levels
 
 if (plot_en)

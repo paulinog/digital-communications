@@ -15,8 +15,8 @@ symbols_set = [-3, -1, 1, 3];
 
 %% Fonte
 % Entrada de texto pelo usuario
-% disp('Enter text:');
-% input_str = input('','s');
+%disp('Enter text:');
+%input_str = input('','s');
 
 % Entrada de teste
 % input_str = 'abcdefghijklmnopqrstuvxzwyABCDEFGHIJKLMNOPQRSTUVXZWY1234567890';
@@ -33,14 +33,17 @@ err = 0;
 for i = 1 : length(input_str)
     % Vetor binario
     input_bin = str_source(input_str(i));
+    % input_bin = str_source(input_str);
     %% Mapeador
     a = mapper(input_bin, symbols_set);
     %% Modulador
     [s, t] = mod_pam4(a);
+    % [s, t] = mod_fsk2(a);
     %% Canal
     % r = s + n;
     %% Demodulador
     % z = demod_pam4(r);
+    % z = demod_fsk2(r);
     %% Demapeador
     output_bin = demapper(a, symbols_set);
     %% Destino

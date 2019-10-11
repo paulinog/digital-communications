@@ -22,7 +22,7 @@ symbols_set = [-3, -1, 1, 3];
 b=log2(M);
 a_mapped = reshape(array_bin, [b, len_src/b])';
 symbol_index = bi2de(a_mapped);
-a = symbols_set(symbol_index+1);
+a = symbols_set(symbol_index +1);
 
 %% modulate
 % e.g. 4-PAM
