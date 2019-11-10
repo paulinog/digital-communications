@@ -1,8 +1,8 @@
 %% PAM-4 Transmitter
 % gpaulino
 clc; clearvars;
-close all;
-disp('PAM-4 example')
+% close all;
+disp('Test SOUND example')
 %% Extra information
 % fc = 440
 %
@@ -34,7 +34,7 @@ N0 = 0.1;
 % N0 = 0.5;
 
 % general
-plot_en = true;
+plot_en = false;
 plot_en_all = false;
 
 %% Start a stopwatch timer
@@ -55,7 +55,7 @@ m = linspace(t0 + (1/R)*fs, t0 + (1/R)*fs*len_sym, len_sym); % spacing vector co
 am = zeros(1, length(t)); % spaced symbols
 am(m) = a;
 
-if (plot_en)
+if (plot_en && plot_en_all)
     % spacing vector discrete in time
     k = linspace((1/R), (1/R) * len_sym, len_sym);
     if (plot_en_all)
@@ -102,7 +102,7 @@ end
 s = conv(am, gt);
 t2 = linspace(2*tmin, 2*tmax, 2*(tmax-tmin)*fs - 1);
 
-if (plot_en)
+if (plot_en && plot_en_all)
     figure()
     hold on
     % stem(t,am)
@@ -160,3 +160,5 @@ end
 %% Sound
 
 sound(s_up)
+
+

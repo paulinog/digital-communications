@@ -2,7 +2,7 @@
 clc; clearvars;
 disp ('MLS Test')
 
-k = 5;
+k = 8;
 tam = 1000;
 
 num_bits = 2^k-1; % number of bits
