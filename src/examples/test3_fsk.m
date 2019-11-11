@@ -1,12 +1,12 @@
 clc; clearvars; 
 disp('FSK-2 example')
 %% User parameters
-numSymbol = 200;
+numSymbol = 1000;
 
 fc0 = 440;
-fc1 = 3*fc0;
+fc1 = 4*fc0;
 
-fs = 10*fc1;
+fs = 4*fc1;
 
 %% FEC
 trellis = poly2trellis(3, [5 7]);
@@ -28,23 +28,25 @@ T = 1/fc0;
 % MLS + FEC + Channel delays
 % tmax = (ch_delay1 + sync_bits + parity_ratio * numSymbol + ch_delay2) * T;
 % MLS + FEC
-% tmax = (sync_bits + parity_ratio * numSymbol) * T;
+tmax = (sync_bits + parity_ratio * numSymbol) * T;
 % FEC
-tmax = (parity_ratio * numSymbol) * T;
+% tmax = (parity_ratio * numSymbol) * T;
 
 t = 0:timestep:tmax-timestep;
 
 %% TX
 a = randsrc(1, numSymbol, [0 1]);
 a_enc = convenc(a, trellis);
-% a_sync = [double(mls(k, 1) > 0) a_enc];
+
+sync_vec = double(mls(k, 1) > 0);
+a_sync = [sync_vec a_enc]; % concatenate
 
 h0 = sin(2*pi*fc0*t); % bit 0
 h1 = sin(2*pi*fc1*t); % bit 1
 
 w = heaviside(t) - heaviside(t - T);
 
-m = upsample(a_enc, T*fs);
+m = upsample(a_sync, T*fs);
 am = conv(m, w);
 % plot(am(1:length(t)))
 
@@ -79,14 +81,13 @@ for i = 1 : len_r
     count = numel(find(t(zx) > (i-1)*T & t(zx) <= i*T));
     c(i) = count;
 end
-% % % c;
-% % % plot(t(1:numSymbol), c(1:numSymbol))
-% % % ylabel('c')
-y_enc = double(c(1:(parity_ratio * numSymbol)) >= 4);
-% % % y_sync = double(c(1:(parity_ratio * numSymbol + sync_bits + 1)) >= 4);
+% c;
+% plot(t(1:numSymbol), c(1:numSymbol))
+% ylabel('c')
 
-% %figure()
-% %plot(t(1:(parity_ratio * numSymbol)), y_sync)
+% y_enc = double(c(1:(parity_ratio * numSymbol)) >= 3);
+y_sync = double(c(1:(parity_ratio * numSymbol + sync_bits)) >= 5);
+% stem(y_sync)
 % 
 % self_corr = xcorr(y_sync, double(mls(k, 1) > 0));
 % figure()
@@ -101,7 +102,9 @@ y_enc = double(c(1:(parity_ratio * numSymbol)) >= 4);
 % end
 % 
 % y_enc = y_sync(start_frame(1) : end_frame);
-% %%
+
+%%
+y_enc = y_sync(256 : end);
 y = vitdec(y_enc, trellis, 20,  'trunc', 'hard');
 
 %% BER
