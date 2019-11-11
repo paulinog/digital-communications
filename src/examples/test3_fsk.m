@@ -13,25 +13,32 @@ trellis = poly2trellis(3, [5 7]);
 parity_ratio = 2;
 
 %% Frame Sync
-k = 8;
+k = 10;
 sync_bits = 2^k-1;
+max_peak_pos = sync_bits * 0.9;
+
+% TEST channel delays
+% ch_delay1 = round(numSymbol*rand(1));
+% ch_delay2 = round(numSymbol*rand(1));
 
 %% Time vector
 timestep = 1/fs;
 T = 1/fc0;
-tmax = parity_ratio * numSymbol * T;
+% tmax = (ch_delay1 + sync_bits + parity_ratio * numSymbol + ch_delay2) * T;
+tmax = (sync_bits + parity_ratio * numSymbol) * T;
 t = 0:timestep:tmax-timestep;
 
 %% TX
 a = randsrc(1, numSymbol, [0 1]);
 a_enc = convenc(a, trellis);
+a_sync = [double(mls(k, 1) > 0) a_enc];
 
 h0 = sin(2*pi*fc0*t);
 h1 = sin(2*pi*fc1*t);
 
 w = heaviside(t) - heaviside(t - T);
 
-m = upsample(a_enc, T*fs);
+m = upsample(a_sync, T*fs);
 am = conv(m, w);
 % plot(am)
 
@@ -42,7 +49,7 @@ s = am(1:length(t)) .* h0 ...
 % sound(s, fs)
 
 %% Channel 
-% r = [zeros(1,100) mls s];
+% r = [zeros(1, ch_delay1) s zeros(1, ch_delay2)];
 r = s;
 
 %% RX
@@ -57,9 +64,14 @@ if (false)
     grid
     legend('Signal', 'Approximate Zero-Crossings')
 end
-c = zeros(1, numSymbol * parity_ratio);
+
+len_r = length(r);
+
+% c = zeros(1, numSymbol * parity_ratio);
+c = zeros(1, len_r);
 c_aux = 1;
-for i = 1 : (numSymbol * parity_ratio)
+% for i = 1 : (numSymbol * parity_ratio)
+for i = 1 : len_r
     count = numel(find(t(zx) <= i*T));
     c(i) = count;
     c(i) = c(i) - c_aux;
@@ -68,13 +80,20 @@ end
 c;
 y_enc = double(c <= 3);
 
-y = vitdec(y_enc, trellis, 20,  'trunc', 'hard');
+self_corr = xcorr(y_enc, double(mls(k, 1) > 0));
+figure()
+plot(self_corr)
 
-%% BER
-err = sum(a ~= y);
-if (err >0 )
-    error([num2str(err) ' errors'])
-else
-    disp('no errors')
-end
+start_frame = find(self_corr > max_peak_pos);
+% vec_rx_i = vec_rx(start_frame(i) + 1 : start_frame(i) + tam);
+
+% y = vitdec(y_enc, trellis, 20,  'trunc', 'hard');
+% 
+% %% BER
+% err = sum(a ~= y);
+% if (err >0 )
+%     error([num2str(err) ' errors'])
+% else
+%     disp('no errors')
+% end
 
