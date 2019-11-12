@@ -14,6 +14,16 @@ OPEN_PLOT = false; % abrir janelas de graficos
 
 symbols_set = [0 1];
 
+fc0 = 440;
+% fc1 = 4*fc0;
+% fs = 4*fc1;
+
+%% Codigo corretor de erros
+trellis = poly2trellis(3, [5 7]);
+
+%% Sincronismo de quadros (MLS)
+k = 8;
+
 %% Fonte
 % Entrada de texto pelo usuario
 %disp('Enter text:');
@@ -33,21 +43,21 @@ err = 0;
     input_bin = str_source(input_str);
     %% Mapeador
     a = mapper(input_bin, symbols_set);
-    numSymbol = length(a)
+    numSymbol = length(a);
     %% Modulador
-    [s, t] = mod_fsk(a);
+    [s, t] = mod_fsk(a, fc0, trellis, k);
     
     %% Canal
     %r = s;
     % r = s + n;
     
     % atraso no tempo
-    ch_delay1 = round(numSymbol*rand(1)); % random spacing
+    ch_delay1 = round(numSymbol*rand(1)); % espacamento aleatorio
     ch_delay2 = round(numSymbol*rand(1));
     r = [zeros(1, ch_delay1) s zeros(1, ch_delay2)];
     
     %% Demodulador
-    z = demod_fsk(r, numSymbol);
+    z = demod_fsk(r, numSymbol, fc0, trellis, k);
     %% Demapeador
     output_bin = demapper(z, symbols_set);
     

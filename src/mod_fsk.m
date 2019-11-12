@@ -1,17 +1,14 @@
-function [s,t] = mod_fsk(a)
+function [s,t] = mod_fsk(a, fc0, trellis, k)
 numSymbol = length(a);
 
-fc0 = 440;
 fc1 = 4*fc0;
-
 fs = 4*fc1;
 
 %% FEC
-trellis = poly2trellis(3, [5 7]);
+
 parity_ratio = 2;
 
 %% Frame Sync
-k = 8;
 sync_bits = 2^k-1;
 
 %% Time vector

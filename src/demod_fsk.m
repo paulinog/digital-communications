@@ -1,5 +1,4 @@
-function [y] = demod_fsk(r, numSymbol)
-fc0 = 440;
+function [y] = demod_fsk(r, numSymbol, fc0, trellis, k)
 fc1 = 4*fc0;
 fs = 4*fc1;
 
@@ -7,14 +6,11 @@ timestep = 1/fs;
 T = 1/fc0;
 
 %% Frame Sync
-k = 8;
 sync_bits = 2^k-1;
 max_peak_pos = 120;
 
 %% FEC
-trellis = poly2trellis(3, [5 7]);
 parity_ratio = 2;
-
 
 %% Time Vector
 frame_size = sync_bits + parity_ratio * numSymbol;
