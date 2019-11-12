@@ -46,15 +46,15 @@ a_sync = [sync_vec a_enc]; % concatenate
 h0 = sin(2*pi*fc0*t); % bit 0
 h1 = sin(2*pi*fc1*t); % bit 1
 
-w = heaviside(t) - heaviside(t - T);
+w = heaviside(t) - heaviside(t - T); % window function
 
 m = upsample(a_sync, T*fs);
 am = conv(m, w);
 % plot(am(1:length(t)))
 
-s = am(1:length(h0)) .* h1 ...
-    + (1 - am(1:length(h1))) .* h0;
-plot(t, s)
+s = am(1:length(h1)) .* h1 ...
+    + (1 - am(1:length(h0))) .* h0;
+% plot(t, s)
 
 % sound(s, fs)
 
@@ -63,9 +63,11 @@ plot(t, s)
 % r = [zeros(1, ch_delay1) s];
 r = s;
 
-frame_size_rx = frame_size;
-tmax_rx = frame_size_rx * T;
-t_rx = 0:timestep:tmax-timestep;
+len_r = length(r);
+% frame_size_rx = len_r/(fs*T);
+tmax_rx = len_r/fs;
+t_rx = 0 : timestep : tmax_rx - timestep;
+plot(t_rx, r)
 
 %% RX
 zci = @(v) find(v(:).*circshift(v(:), [-1 0]) <= 0);
@@ -81,14 +83,15 @@ if (false)
 end
 
 %% RX zero crossing counter
-len_r = length(r);
+
 c = zeros(1, len_r);
 for i = 1 : len_r
     count = numel(find(t(zx) > (i-1)*T & t(zx) <= i*T));
     c(i) = count;
 end
-plot(t(1:numSymbol), c(1:numSymbol))
-ylabel('c')
+% plot(t, c)
+% plot(t(1:frame_size), c(1:frame_size))
+% ylabel('c')
 
 y_sync = double(c >= 5);
 % stem(y_sync)
@@ -98,7 +101,8 @@ sync_vec2 = double(mls(k, 1) > 0);
 
 self_corr = xcorr(y_sync, sync_vec2);
 figure()
-plot(self_corr(length(y_sync): length(y_sync) + frame_size));
+% plot(self_corr(length(y_sync): length(y_sync) + frame_size));
+plot(self_corr);
 % 
 % start_frame = find(self_corr(length(y_sync): end) > max_peak_pos);
 % 
@@ -112,8 +116,8 @@ plot(self_corr(length(y_sync): length(y_sync) + frame_size));
 
 %%
 
-start_frame = 256;
-% start_frame = ch_delay1 + (sync_bits+1);
+start_frame = (sync_bits+1); % + delay
+% start_frame = (sync_bits+1) + ch_delay1;
 end_frame = (start_frame-1) + (frame_size - sync_bits);
 
 y_enc = y_sync(start_frame : end_frame);
