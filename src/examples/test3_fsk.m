@@ -109,7 +109,7 @@ figure()
 % plot(self_corr(length(y_sync): length(y_sync) + frame_size));
 plot(self_corr);
 % 
-% start_frame = find(self_corr(length(y_sync): end) > max_peak_pos);
+start_frame = find(self_corr(length(y_sync): end) > 120) + sync_bits
 % 
 % if (start_frame(1) + parity_ratio*numSymbol) > length(y_sync)
 %     end_frame = length(y_sync);
@@ -124,7 +124,8 @@ plot(self_corr);
 % start_frame = (sync_bits+1);
 % start_frame = (sync_bits+1) + ch_delay1;
 
-start_frame = sync_bits + 875;
+%start_frame = sync_bits + 875;
+% start_frame = 1020 + 255;
 
 
 end_frame = (start_frame-1) + (frame_size - sync_bits);
