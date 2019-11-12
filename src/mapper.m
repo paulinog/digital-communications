@@ -17,5 +17,4 @@ len_src = length(array_bin);
 a_mapped = reshape(array_bin, [b, len_src/b])';
 symbol_index = bi2de(a_mapped);
 a = symbols_set(symbol_index+1);
-
 end 
