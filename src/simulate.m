@@ -6,12 +6,8 @@ clearvars;
 % close all;
 disp('Final Project (IE533)')
 disp('Binary FSK - SIMULATION')
-%%  Parametros de Usuario
-VERBOSE = false; % imprimir textos de log no Command Window a cada procedimento
-OPEN_PLOT = false; % abrir janelas de graficos
 
 %% Propriedades de Modulacao
-
 symbols_set = [0 1];
 
 fc0 = 440;
