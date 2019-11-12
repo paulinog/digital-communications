@@ -59,8 +59,8 @@ s = am(1:length(h1)) .* h1 ...
 % sound(s, fs)
 
 %% Channel 
-% r = [zeros(1, ch_delay1) s zeros(1, ch_delay2)];
-r = [zeros(1, ch_delay1) s];
+r = [zeros(1, ch_delay1) s zeros(1, ch_delay2)];
+% r = [zeros(1, ch_delay1) s ];
 % r = s;
 
 len_r = length(r);
