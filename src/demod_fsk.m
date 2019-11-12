@@ -1,4 +1,5 @@
-function [y] = demod_fsk(r, numSymbol, fc0, trellis, k)
+function [y] = demod_fsk(r, fc0, trellis, k, numSymbol)
+
 fc1 = 4*fc0;
 fs = 4*fc1;
 
@@ -52,11 +53,11 @@ y_sync = double(c >= 5);
 % stem(y_sync)
 
 %% RX removing MLS
-sync_vec2 = double(mls(k, 1) > 0);
+sync_vec = double(mls(k, 1) > 0);
 
-self_corr = xcorr(y_sync, sync_vec2);
-% figure()
-% plot(self_corr);
+self_corr = xcorr(y_sync, sync_vec);
+figure()
+plot(self_corr);
 
 start_frame = find(self_corr(length(y_sync): end) > max_peak_pos) + sync_bits;
 % 
@@ -68,10 +69,14 @@ start_frame = find(self_corr(length(y_sync): end) > max_peak_pos) + sync_bits;
 % 
 % y_enc = y_sync(start_frame(1) : end_frame);
 
-end_frame = (start_frame-1) + (frame_size - sync_bits);
-y_enc = y_sync(start_frame : end_frame);
+y_dec = [];
+for i = 1 : length(start_frame)
+    end_frame = (start_frame(i)-1) + (frame_size - sync_bits);
+    y_enc = y_sync(start_frame(i) : end_frame);
+    %% FEC
+    y_vitdec = vitdec(y_enc, trellis, 20,  'trunc', 'hard');
+    y_dec = [y_dec y_vitdec];
+end
 
-%% FEC
-y = vitdec(y_enc, trellis, 20,  'trunc', 'hard');
-
+y = y_dec;
 end
