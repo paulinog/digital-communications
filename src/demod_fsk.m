@@ -40,9 +40,9 @@ for i = 1 : len_r
         c(i) = 0;
     end
 end
-figure()
-plot(t_rx, c)
-ylabel('c')
+% figure()
+% plot(t_rx, c)
+% ylabel('c')
 
 % disp(['max c= ' num2str(max(c))])
 % disp(['min c= ' num2str(min(c))])
@@ -75,14 +75,27 @@ start_frame = find(self_corr(length(y_sync): end) == max_peak_pos) + sync_bits;
 % 
 % y_enc = y_sync(start_frame(1) : end_frame);
 
-y_dec = [];
-for i = 1 : length(start_frame)
-    end_frame = (start_frame(i)-1) + (frame_size - sync_bits);
-    y_enc = y_sync(start_frame(i) : end_frame);
-    %% FEC
-    y_vitdec = vitdec(y_enc, trellis, 20,  'trunc', 'hard');
-    y_dec = [y_dec y_vitdec];
+% y_dec = [];
+% for i = 1 : length(start_frame)
+%     end_frame = (start_frame(i)-1) + (frame_size - sync_bits);
+%     y_enc = y_sync(start_frame(i) : end_frame);
+%     %% FEC
+%     y_vitdec = vitdec(y_enc, trellis, 20,  'trunc', 'hard');
+%     y_dec = [y_dec y_vitdec];
+% end
+% y = y_dec;
+
+if(isempty(start_frame) == 0)
+    start_frame = 1;
 end
 
-y = y_dec;
+if(length(start_frame) > 1)
+    start_frame = start_frame(1);
+end
+
+end_frame = (start_frame-1) + (frame_size - sync_bits);
+y_enc = y_sync(start_frame : end_frame);
+%% FEC
+y = vitdec(y_enc, trellis, 20,  'trunc', 'hard');
+
 end

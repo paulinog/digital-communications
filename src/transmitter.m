@@ -21,9 +21,13 @@ trellis = poly2trellis(3, [5 7]);
 k = 8;
 
 %% Fonte
-% Entrada de texto pelo usuario
+% 1) Entrada de texto pelo usuario
 disp('Enter text:');
 input_str = input('','s');
+
+% 2) Entrada de teste
+% input_str = 'abcdefghijklmnopqrstuvxzwyABCDEFGHIJKLMNOPQRSTUVXZWY1234567890';
+
 
 %%
 % Inicia um stopwatch timer

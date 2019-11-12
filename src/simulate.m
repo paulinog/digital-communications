@@ -18,7 +18,7 @@ fs = 4*fc1;
 trellis = poly2trellis(3, [5 7]);
 
 %% Sincronismo de quadros (MLS)
-k = 8;
+k = 10;
 
 %% Fonte
 % 1) Entrada de texto pelo usuario
@@ -37,9 +37,14 @@ input_bin = str_source(input_str);
 
 %% Mapeador
 a = mapper(input_bin, symbols_set);
-disp(['Number of bits sent:' num2str(length(a))]);
+num_bits = length(a);
+disp(['Number of bits sent:' num2str(num_bits)]);
 %% Modulador
 [s, t] = mod_fsk(a, fc0, fc1, fs, trellis, k);
+
+figure()
+plot(t, s)
+title('s(t)')
 
 %% Canal
 % r = s;
@@ -53,7 +58,7 @@ disp(['Number of bits sent:' num2str(length(a))]);
 % pause(1); % delay
 
 % Audio Record <---
-numBits = 8;
+numBits = 24;
 numChannels = 1;
 audio_rx = audiorecorder(fs, numBits, numChannels);
 record(audio_rx);
@@ -70,6 +75,7 @@ r = getaudiodata(audio_rx);
 
 figure()
 plot(r)
+title('r(t)')
 
 %% Demodulador
 z = demod_fsk(r, fc0, fc1, fs, trellis, k, length(a));
@@ -89,7 +95,7 @@ disp('-----')
 % Calcula a taxa de erro de bit
 % err = biterr(input_bin, output_bin);
 err = biterr(a(1:length(z)), z);
-disp(['Bit errors: ' num2str(err)])
+disp(['Bit errors: ' num2str(err) ' (' num2str(100*err/num_bits) '%)'])
 % Para o stopwatch timer
 disp('Total time to compute:');
 toc;
