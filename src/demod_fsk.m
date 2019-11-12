@@ -5,7 +5,6 @@ T = 1/fc0;
 
 %% Frame Sync
 sync_bits = 2^k-1;
-% max_peak_pos = 120;
 
 %% FEC
 parity_ratio = 2;
@@ -27,7 +26,10 @@ if (true)
     plot(t_rx(zx), r(zx), 'bp')
     hold off
     grid
+    title('Zero-crossings counter')
     legend('Signal', 'Approximate Zero-Crossings')
+    ylabel('r(t)')
+    xlabel('time')
 end
 
 %% RX zero crossing counter
@@ -40,14 +42,14 @@ for i = 1 : len_r
         c(i) = 0;
     end
 end
-% figure()
-% plot(t_rx, c)
-% ylabel('c')
+figure()
+plot(t_rx, c)
+ylabel('c')
 
 % disp(['max c= ' num2str(max(c))])
 % disp(['min c= ' num2str(min(c))])
 
-y_sync = double(c >= 5);
+y_sync = double(c >= 4);
 
 % figure()
 % stem(y_sync)
@@ -58,6 +60,9 @@ sync_vec = double(mls(k, 1) > 0);
 self_corr = xcorr(y_sync, sync_vec);
 figure()
 plot(self_corr);
+title('Cross correlation')
+ylabel('Rs')
+xlabel('time')
 
 max_peak_pos = max(self_corr);
 if(length(max_peak_pos) ~= 1)
@@ -66,35 +71,22 @@ if(length(max_peak_pos) ~= 1)
 end
 
 start_frame = find(self_corr(length(y_sync): end) == max_peak_pos) + sync_bits;
-% 
-% if (start_frame(1) + parity_ratio*numSymbol) > length(y_sync)
-%     end_frame = length(y_sync);
-% else
-%     end_frame = (start_frame(1) + parity_ratio*numSymbol);
-% end
-% 
-% y_enc = y_sync(start_frame(1) : end_frame);
 
-% y_dec = [];
-% for i = 1 : length(start_frame)
-%     end_frame = (start_frame(i)-1) + (frame_size - sync_bits);
-%     y_enc = y_sync(start_frame(i) : end_frame);
-%     %% FEC
-%     y_vitdec = vitdec(y_enc, trellis, 20,  'trunc', 'hard');
-%     y_dec = [y_dec y_vitdec];
-% end
-% y = y_dec;
-
-if(isempty(start_frame) == 0)
-    start_frame = 1;
-end
-
-if(length(start_frame) > 1)
-    start_frame = start_frame(1);
+if(isempty(start_frame) || (length(start_frame) > 1))
+    disp('start_frame =')
+    disp(start_frame)
+    
+    if isempty(start_frame)
+        start_frame = 1;
+    end
+    if (length(start_frame) > 1)
+        start_frame = start_frame(1);
+    end
 end
 
 end_frame = (start_frame-1) + (frame_size - sync_bits);
 y_enc = y_sync(start_frame : end_frame);
+
 %% FEC
 y = vitdec(y_enc, trellis, 20,  'trunc', 'hard');
 
