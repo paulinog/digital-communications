@@ -60,8 +60,8 @@ s = am(1:length(h1)) .* h1 ...
 
 %% Channel 
 % r = [zeros(1, ch_delay1) s zeros(1, ch_delay2)];
-% r = [zeros(1, ch_delay1) s];
-r = s;
+r = [zeros(1, ch_delay1) s];
+% r = s;
 
 len_r = length(r);
 % frame_size_rx = len_r/(fs*T);
@@ -72,11 +72,11 @@ plot(t_rx, r)
 %% RX
 zci = @(v) find(v(:).*circshift(v(:), [-1 0]) <= 0);
 zx = zci(r);
-if (false)
+if (true)
     figure()
-    plot(t, r, '-r')
+    plot(t_rx, r, '-r')
     hold on
-    plot(t(zx), r(zx), 'bp')
+    plot(t_rx(zx), r(zx), 'bp')
     hold off
     grid
     legend('Signal', 'Approximate Zero-Crossings')
@@ -86,15 +86,20 @@ end
 
 c = zeros(1, len_r);
 for i = 1 : len_r
-    count = numel(find(t(zx) > (i-1)*T & t(zx) <= i*T));
+    count = numel(find(t_rx(zx) > (i-1)*T & t_rx(zx) <= i*T));
     c(i) = count;
+    if c(i) > 10
+        c(i) = 0;
+    end
 end
-% plot(t, c)
+plot(t_rx, c)
 % plot(t(1:frame_size), c(1:frame_size))
-% ylabel('c')
+ylabel('c')
 
 y_sync = double(c >= 5);
-% stem(y_sync)
+
+figure()
+stem(y_sync)
 
 %% RX removing MLS
 sync_vec2 = double(mls(k, 1) > 0);
@@ -116,8 +121,12 @@ plot(self_corr);
 
 %%
 
-start_frame = (sync_bits+1); % + delay
+% start_frame = (sync_bits+1);
 % start_frame = (sync_bits+1) + ch_delay1;
+
+start_frame = sync_bits + 875;
+
+
 end_frame = (start_frame-1) + (frame_size - sync_bits);
 
 y_enc = y_sync(start_frame : end_frame);
