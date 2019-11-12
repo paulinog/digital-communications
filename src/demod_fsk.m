@@ -1,14 +1,11 @@
-function [y] = demod_fsk(r, fc0, trellis, k, numSymbol)
-
-fc1 = 4*fc0;
-fs = 4*fc1;
+function [y] = demod_fsk(r, fc0, fc1, fs, trellis, k, numSymbol)
 
 timestep = 1/fs;
 T = 1/fc0;
 
 %% Frame Sync
 sync_bits = 2^k-1;
-max_peak_pos = 120;
+% max_peak_pos = 120;
 
 %% FEC
 parity_ratio = 2;
@@ -23,7 +20,7 @@ t_rx = 0 : timestep : tmax_rx - timestep;
 %% RX
 zci = @(v) find(v(:).*circshift(v(:), [-1 0]) <= 0);
 zx = zci(r);
-if (false)
+if (true)
     figure()
     plot(t_rx, r, '-r')
     hold on
@@ -43,9 +40,12 @@ for i = 1 : len_r
         c(i) = 0;
     end
 end
-% figure()
-% plot(t_rx, c)
-% ylabel('c')
+figure()
+plot(t_rx, c)
+ylabel('c')
+
+% disp(['max c= ' num2str(max(c))])
+% disp(['min c= ' num2str(min(c))])
 
 y_sync = double(c >= 5);
 
@@ -59,7 +59,13 @@ self_corr = xcorr(y_sync, sync_vec);
 figure()
 plot(self_corr);
 
-start_frame = find(self_corr(length(y_sync): end) > max_peak_pos) + sync_bits;
+max_peak_pos = max(self_corr);
+if(length(max_peak_pos) ~= 1)
+    disp('max_peak_pos = ')
+    disp(max_peak_pos)
+end
+
+start_frame = find(self_corr(length(y_sync): end) == max_peak_pos) + sync_bits;
 % 
 % if (start_frame(1) + parity_ratio*numSymbol) > length(y_sync)
 %     end_frame = length(y_sync);

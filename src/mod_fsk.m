@@ -1,8 +1,5 @@
-function [s,t] = mod_fsk(a, fc0, trellis, k)
+function [s,t] = mod_fsk(a, fc0, fc1, fs, trellis, k)
 numSymbol = length(a);
-
-fc1 = 4*fc0;
-fs = 4*fc1;
 
 %% FEC
 

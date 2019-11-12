@@ -3,7 +3,7 @@
 % Guilherme Paulino, RA 117119
 clc;
 clearvars;
-% close all;
+close all;
 disp('Final Project (IE533)')
 disp('Binary FSK - SIMULATION')
 
@@ -11,8 +11,8 @@ disp('Binary FSK - SIMULATION')
 symbols_set = [0 1];
 
 fc0 = 440;
-% fc1 = 4*fc0;
-% fs = 4*fc1;
+fc1 = 4*fc0;
+fs = 4*fc1;
 
 %% Codigo corretor de erros
 trellis = poly2trellis(3, [5 7]);
@@ -39,10 +39,10 @@ input_bin = str_source(input_str);
 a = mapper(input_bin, symbols_set);
 disp(['Number of bits sent:' num2str(length(a))]);
 %% Modulador
-s = mod_fsk(a, fc0, trellis, k);
+[s, t] = mod_fsk(a, fc0, fc1, fs, trellis, k);
 
 %% Canal
-r = s;
+% r = s;
 % r = s + n;
 
 % atraso no tempo
@@ -50,8 +50,29 @@ r = s;
 % ch_delay2 = round(100*rand(1));
 % r = [zeros(1, ch_delay1) s zeros(1, ch_delay2)];
 
+% pause(1); % delay
+
+% Audio Record <---
+numBits = 8;
+numChannels = 1;
+audio_rx = audiorecorder(fs, numBits, numChannels);
+record(audio_rx);
+pause(0.1); % delay
+
+% B2B
+sound(s, fs)
+
+% input('Press ENTER to continue')
+pause(t(end) + 0.1); % delay
+stop(audio_rx)
+
+r = getaudiodata(audio_rx);
+
+figure()
+plot(r)
+
 %% Demodulador
-z = demod_fsk(r, fc0, trellis, k, length(a));
+z = demod_fsk(r, fc0, fc1, fs, trellis, k, length(a));
 %% Demapeador
 output_bin = demapper(z, symbols_set);
 

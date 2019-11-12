@@ -1,7 +1,7 @@
 %% Run Receiver
 % Disciplina IE533A, 2s2019 (FEEC/UNICAMP)
 % Guilherme Paulino, RA 117119
-clc;
+% clc;
 clearvars;
 % close all;
 disp('Final Project (IE533)')
@@ -21,7 +21,7 @@ trellis = poly2trellis(3, [5 7]);
 k = 8;
 
 %% Defina o numero de bits
-numSymbol = input('Enter the number of bits to be received:');
+numSymbol = input('Enter the number of bits to be received: ');
 
 %% Recebendo
 numBits = 8;
@@ -43,7 +43,7 @@ r = getaudiodata(audio_rx);
 tic;
 
 %% Demodulador
-z = demod_fsk(r, fc0, trellis, k, numSymbol);
+z = demod_fsk(r, fc0, fc1, fs, trellis, k, numSymbol);
 
 %% Demapeador
 % output_bin = demapper(z, symbols_set);

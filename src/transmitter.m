@@ -34,11 +34,13 @@ input_bin = str_source(input_str);
 
 %% Mapeador
 a = mapper(input_bin, symbols_set);
-disp(['Number of bits sent:' num2str(length(a))]);
+num_bits = length(a);
+disp(['Number of bits sent:' num2str(num_bits)]);
 %% Modulador
-s = mod_fsk(a, fc0, trellis, k);
+s = mod_fsk(a, fc0, fc1, fs, trellis, k);
 
 %% Transmitir
+% disp('')
 sound(s, fs)
 
 %% Para o stopwatch timer
