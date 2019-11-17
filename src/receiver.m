@@ -1,9 +1,10 @@
 %% Run Receiver
 % Disciplina IE533A, 2s2019 (FEEC/UNICAMP)
 % Guilherme Paulino, RA 117119
-% clc;
+
+%clc;
 clearvars;
-% close all;
+%close all;
 disp('Final Project (IE533)')
 disp('Binary FSK - RECEIVER')
 
@@ -46,8 +47,7 @@ tic;
 z = demod_fsk(r, fc0, fc1, fs, trellis, k, numSymbol);
 
 %% Demapeador
-% output_bin = demapper(z, symbols_set);
-output_bin = z;
+output_bin = demapper(z, symbols_set);
 
 %% Destino
 output_str = str_dest(output_bin);

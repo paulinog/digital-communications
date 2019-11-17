@@ -44,12 +44,15 @@ for i = 1 : len_r
 end
 figure()
 plot(t_rx, c)
-ylabel('c')
+xlim([0 frame_size/fs])
+title('Zero-crossings counter per Period')
+ylabel('counts / period')
+xlabel('time')
 
 % disp(['max c= ' num2str(max(c))])
 % disp(['min c= ' num2str(min(c))])
 
-y_sync = double(c >= 4);
+y_sync = double(c >= 5);
 
 % figure()
 % stem(y_sync)
@@ -60,20 +63,21 @@ sync_vec = double(mls(k, 1) > 0);
 self_corr = xcorr(y_sync, sync_vec);
 figure()
 plot(self_corr);
+xlim([length(y_sync)-length(sync_vec) length(y_sync)+frame_size])
 title('Cross correlation')
-ylabel('Rs')
-xlabel('time')
+ylabel('R')
+xlabel('sample')
 
 max_peak_pos = max(self_corr);
 if(length(max_peak_pos) ~= 1)
-    disp('max_peak_pos = ')
+    warning('max_peak_pos = ')
     disp(max_peak_pos)
 end
 
 start_frame = find(self_corr(length(y_sync): end) == max_peak_pos) + sync_bits;
 
 if(isempty(start_frame) || (length(start_frame) > 1))
-    disp('start_frame =')
+    warning('start_frame =')
     disp(start_frame)
     
     if isempty(start_frame)

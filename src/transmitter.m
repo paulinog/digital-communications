@@ -1,9 +1,10 @@
 %% Run Transmitter
 % Disciplina IE533A, 2s2019 (FEEC/UNICAMP)
 % Guilherme Paulino, RA 117119
+
 clc;
 clearvars;
-% close all;
+%close all;
 disp('Final Project (IE533)')
 disp('Binary FSK - TRANSMITTER')
 
@@ -28,12 +29,10 @@ input_str = input('','s');
 % 2) Entrada de teste
 % input_str = 'abcdefghijklmnopqrstuvxzwyABCDEFGHIJKLMNOPQRSTUVXZWY1234567890';
 
-
 %%
 % Inicia um stopwatch timer
 tic;
 %% Vetor binario
-%input_bin = str_source(input_str(i));
 input_bin = str_source(input_str);
 
 %% Mapeador
@@ -44,7 +43,6 @@ disp(['Number of bits sent:' num2str(num_bits)]);
 s = mod_fsk(a, fc0, fc1, fs, trellis, k);
 
 %% Transmitir
-% disp('')
 sound(s, fs)
 
 %% Para o stopwatch timer

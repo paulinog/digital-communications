@@ -1,6 +1,7 @@
 %% Run Simulation
 % Disciplina IE533A, 2s2019 (FEEC/UNICAMP)
 % Guilherme Paulino, RA 117119
+
 clc;
 clearvars;
 close all;
@@ -10,9 +11,9 @@ disp('Binary FSK - SIMULATION')
 %% Propriedades de Modulacao
 symbols_set = [0 1];
 
-fc0 = 440;
+fc0 = 110;
 fc1 = 4*fc0;
-fs = 4*fc1;
+fs = 8*fc1;
 
 %% Codigo corretor de erros
 trellis = poly2trellis(3, [5 7]);
@@ -28,11 +29,10 @@ k = 10;
 % 2) Entrada de teste
 input_str = 'abcdefghijklmnopqrstuvxzwyABCDEFGHIJKLMNOPQRSTUVXZWY1234567890';
 
-%%
-% Inicia um stopwatch timer
+%% Inicia um stopwatch timer
 tic;
+
 %% Vetor binario
-%input_bin = str_source(input_str(i));
 input_bin = str_source(input_str);
 
 %% Mapeador
@@ -44,58 +44,59 @@ disp(['Number of bits sent:' num2str(num_bits)]);
 
 figure()
 plot(t, s)
-title('s(t)')
+title('TX')
+ylabel('s(t)')
+xlabel('time')
 
 %% Canal
-% r = s;
 % r = s + n;
+% r=s;
 
-% atraso no tempo
-% ch_delay1 = round(100*rand(1)); % espacamento aleatorio
-% ch_delay2 = round(100*rand(1));
-% r = [zeros(1, ch_delay1) s zeros(1, ch_delay2)];
-
-% pause(1); % delay
-
-% Audio Record <---
-numBits = 24;
+% grava o audio
+numBits = 16;
 numChannels = 1;
 audio_rx = audiorecorder(fs, numBits, numChannels);
 record(audio_rx);
 pause(0.1); % delay
 
-% B2B
+% transmit ->
 sound(s, fs)
 
-% input('Press ENTER to continue')
 pause(t(end) + 0.1); % delay
 stop(audio_rx)
 
-r = getaudiodata(audio_rx);
+% receive <-
+r = getaudiodata(audio_rx)';
 
 figure()
-plot(r)
-title('r(t)')
+t_ch = 0 : 1/fs : (length(r)-1)/fs ;
+plot(t_ch, r)
+title('RX')
+ylabel('r(t)')
+xlabel('time')
 
-%% Demodulador
+%% RX Demodulador
 z = demod_fsk(r, fc0, fc1, fs, trellis, k, length(a));
 %% Demapeador
 output_bin = demapper(z, symbols_set);
 
-%% Destino
+%% RX Destino
 output_str = str_dest(output_bin);
 % Mostra a saida de texto
 disp('-----')
 disp('Output text:');
 fprintf('%s', output_str)
 
-%%
+%% BER
 disp(' ')
 disp('-----')
 % Calcula a taxa de erro de bit
-% err = biterr(input_bin, output_bin);
-err = biterr(a(1:length(z)), z);
-disp(['Bit errors: ' num2str(err) ' (' num2str(100*err/num_bits) '%)'])
+if (length(a) == length(z))
+    err = biterr(a, z);
+    disp(['Bit errors: ' num2str(err) ' (' num2str(100*err/num_bits) '%)'])
+else
+    disp('Bit errors: z has a different size')
+end
 % Para o stopwatch timer
 disp('Total time to compute:');
 toc;
