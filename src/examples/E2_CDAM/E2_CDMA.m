@@ -84,9 +84,9 @@ end
 
 transmitedMessage;
 
-%% Modulation
-
 %% Transmission - Tx
+
+
 s = transmitedMessage;
 
 %% Channel
@@ -98,9 +98,9 @@ y_sync = r;
 %% Self Correlation
 self_corr = xcorr(y_sync, syncVec);
 % figure()
-% plot(self_corr);
+plot(self_corr);
 
-max_peak_pos = 500;
+max_peak_pos = (sync_bits/2)*0.95;
 % selfCorrPeaks = find(self_corr(length(y_sync): end) > max_peak_pos);
 
 startFrame = sync_bits + min(find(self_corr(length(y_sync): end) > max_peak_pos));
