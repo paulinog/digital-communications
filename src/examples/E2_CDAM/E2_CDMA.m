@@ -2,7 +2,7 @@
 clear all;
 clc;
 
-%% Definicao dos dados da mensagem
+%% Message Definition
 symbolsSet = [0 1];
 transmissionSymbolSet = [-1 1];
 numberOfUsers = 1;
@@ -13,7 +13,7 @@ data = [];
 % data = [[0 0];[1 0];[1 1]];
 
 % Data generated randomly
-% dataLen = 200;
+% dataLen = 2;
 % for i = 1:numberOfUsers
 %     data = [data; randsrc(1, dataLen, symbolsSet)]; % mensagem aleatoria
 % end
@@ -54,20 +54,32 @@ dataConverted;
 spreadingCodeConverted;
 
 %% Spread Message
-codeData = [];
-
+a = [];
 for user = 1:numberOfUsers
-    codeData = [codeData; coder(dataConverted(user,:), spreadingCodeConverted(user,:))];
+    a = [a; coder(dataConverted(user,:), spreadingCodeConverted(user,:))];
 end
 
-codeData;
+a = symbolConverter(a, transmissionSymbolSet, symbolsSet);
+
+%% Message encode
+trellis = poly2trellis(3, [5 7]);
+parity_ratio = 2;
+
+k = 10;
+sync_bits = 2^k-1;
+
+a_enc = convenc(a, trellis);
+syncVec = double(mls(k, 1) > 0);
+a_sync = [syncVec a_enc syncVec]; % concatenate
+
+% aSyncConverted = symbolConverter(a_sync, symbolsSet, transmissionSymbolSet);
 
 %% Composed Message
 
 if numberOfUsers == 1
-    transmitedMessage = codeData;
+    transmitedMessage = a_sync;
 else
-    transmitedMessage = sum(codeData);
+    transmitedMessage = sum(a_sync);
 end
 
 transmitedMessage;
@@ -81,9 +93,27 @@ s = transmitedMessage;
 r = s; %Bypass
 
 %% Receiver - Rx
-receivedMessage = r;
+y_sync = r;
+
+%% Self Correlation
+self_corr = xcorr(y_sync, syncVec);
+% figure()
+% plot(self_corr);
+
+max_peak_pos = 500;
+% selfCorrPeaks = find(self_corr(length(y_sync): end) > max_peak_pos);
+
+startFrame = sync_bits + min(find(self_corr(length(y_sync): end) > max_peak_pos));
+endFrame = max(find(self_corr(length(y_sync): end) > max_peak_pos)) - 1;
+frameLen = endFrame - startFrame;
 
 %% Decoder
+y_enc = y_sync(startFrame : endFrame);
+y = vitdec(y_enc, trellis, 20,  'trunc', 'hard');
+
+receivedMessage = y;
+
+%% CDMA Decoder
 recoveredMessage = [];
 for i = 1:numberOfUsers
     recoveredMessage = [recoveredMessage; cdma_Decoder(receivedMessage, spreadingCode(i,:), symbolsSet, transmissionSymbolSet)];
