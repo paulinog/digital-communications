@@ -1,0 +1,42 @@
+Passos - Programa OFDM
+por GUSTAVO FRAIDENRAICH 293918 - terça, 19 Nov 2019, 09:53
+ 
+Bom dia a todos,
+
+Mando abaixo uma possível sequência de operações que os auxiliará na implementação do programa final OFDM a ser entregue na semana que vem no dia 26/11.
+Penso que a implementação do programa OFDM deve seguir as seguintes etapas
+1 - Geração de dados binários - msg
+2 - a=ifft(msg)
+3 - aqui podemos usar o mls , colocando em dois lugares de forma a gerar
+txbb=[mls a mls]
+4 - Outra opção, e é a que se usa na prática, é repetir um trecho do próprio vetor a, ou seja, inserir um prefixo cíclico. De tal forma a gerar o seguinte sinal
+txbb=[a(length(a)/2:end)  a]
+4 - Convoluir txbb com o pulso p(t) dado no Barry página 235, Eq. 6.85.
+s1=conv(txbb,pt)
+5 - Em seguida passar o sinal para RF
+SRF=s1.*exp(j2pi f t)
+6 - Esse sinal é gravado em um arquivo .wav.
+__________________________________________________________________________
+__________________________________________________________________________
+RX
+No receptor as seguintes etapas devem ser feitas:
+1 - Passar o sinal de RF para banda base
+rxbb=hilbert(SRF).*exp(-j2pift)
+2 - Em seguida convoluir com p(t)
+rx=conv(rxbb,pt,'same')
+3 - Aqui devemos procurar pelo início da mensagem, se usou o mls, então podemos fazer a autocorrelação do sinal com o mls upsampled. Algo do tipo
+headerUPSampled=[kron(header,ones(1,round(T*fs/N)))];
+
+headerUPSampled=[zeros(1,length(rx)-length(headerUPSampled)) headerUPSampled];
+
+corrVec=xcorr(sign(real(rx)),headerUPSampled);
+
+[pks,loc] = findpeaks(abs(corrVec),'NPeaks',2,'SortStr','descend');
+
+4 - Aqui devemos escolher o índice onde devemos começar a fazer o donwsampling
+5 - Em seguida devemos fazer a fft desse sinal já subamostrado.
+6 - e fazer sign(real(fft(   ))).
+7 - Finalmente, devemos converter de binário para texto novamente.
+OBS1: Não inclui o código de Viterbi, mas ele também pode ser inserido, caso desejem.
+OBS2: Para quem usou o CP como forma de sincronismo de quadro, também é possível detectar o início do quadro usando o xcorr(rx). Façam o plot(abs(xcorr(rx))) e será possível observar  que haverá dois picos. Esses picos indicarão onde devem começar a fazer o downsampling.
+Abraços
