@@ -9,7 +9,7 @@ Descrição: Modulador Acústico FSK binário
 
 Opções de execução:
 	1. Simulação, usando loopback na placa de som do Windows.
-	2. Transmissor e Recepitor, usando dois laptops ou um celular, ou outro dispositivo externo, para gravar o som.
+	2. Transmissor e Receptor, usando dois laptops ou um celular, ou outro dispositivo externo, para gravar o som.
 
 ==================
 Opção 1: Simulador
