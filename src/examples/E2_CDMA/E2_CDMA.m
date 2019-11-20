@@ -1,5 +1,5 @@
 %% Codificacao e decodificacao CDMA
-clear all;
+clearvars;
 clc;
 
 %% Message Definition
@@ -89,6 +89,9 @@ transmitedMessage;
 
 s = transmitedMessage;
 
+figure()
+stem(s)
+
 %% Channel
 r = s; %Bypass
 
@@ -97,7 +100,7 @@ y_sync = r;
 
 %% Self Correlation
 self_corr = xcorr(y_sync, syncVec);
-% figure()
+figure()
 plot(self_corr);
 
 max_peak_pos = (sync_bits/2)*0.95;
@@ -127,7 +130,6 @@ disp('Output text:');
 fprintf('%s \n', output_str)
 
 %% BER
-recoveredMessage ~= data;
 err = sum(sum(recoveredMessage ~= data));
 if (err > 0)
     error([num2str(err) ' errors'])
