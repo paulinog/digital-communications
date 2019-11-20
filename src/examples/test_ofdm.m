@@ -8,18 +8,17 @@ fc1 = 4*fc0;
 fs = 4*fc1;
 
 %% FEC Parameters
-enable_FEC = true;
+enable_FEC = false;
 
 trellis = poly2trellis(3, [5 7]);
 parity_ratio = 2;
 
 %% MLS Parameters
 enable_MLS = false;
-
 k = 8;
 sync_bits = 2^k-1;
 
-% TEST channel delays
+%% TEST channel delays
 % ch_delay1 = 100*round(numSymbol*rand(1)); % random spacing
 % ch_delay2 = 100*round(numSymbol*rand(1));
 
@@ -63,18 +62,18 @@ else
 end
 
 %% TX FSK-2
-h0 = sin(2*pi*fc0*t); % bit 0
-h1 = sin(2*pi*fc1*t); % bit 1
-w = heaviside(t) - heaviside(t - T); % window function
-m = upsample(a_sync, T*fs);
-am = conv(m, w);
-% plot(am(1:length(t)))
-s = am(1:length(h1)) .* h1 ...
-    + (1 - am(1:length(h0))) .* h0;
-% plot(t, s)
-% sound(s, fs)
-
+% h0 = sin(2*pi*fc0*t); % bit 0
+% h1 = sin(2*pi*fc1*t); % bit 1
+% w = heaviside(t) - heaviside(t - T); % window function
+% m = upsample(a_sync, T*fs);
+% am = conv(m, w);
+% % plot(am(1:length(t)))
+% s = am(1:length(h1)) .* h1 ...
+%     + (1 - am(1:length(h0))) .* h0;
+% % plot(t, s)
+% % sound(s, fs)
 %% TX BPSK
+s = a_sync;
 
 %% Channel 
 r = s;
@@ -85,38 +84,48 @@ len_r = length(r);
 % frame_size_rx = len_r/(fs*T);
 tmax_rx = len_r/fs;
 t_rx = 0 : timestep : tmax_rx - timestep;
-plot(t_rx, r)
-
-%% RX FSK-2
-zci = @(v) find(v(:).*circshift(v(:), [-1 0]) <= 0);
-zx = zci(r);
-if (true)
-    figure()
-    plot(t_rx, r, '-r')
-    hold on
-    plot(t_rx(zx), r(zx), 'bp')
-    hold off
-    grid
-    legend('Signal', 'Approximate Zero-Crossings')
-end
-c = zeros(1, len_r);
-for i = 1 : len_r
-    count = numel(find(t_rx(zx) > (i-1)*T & t_rx(zx) <= i*T));
-    c(i) = count;
-    if c(i) > 10
-        c(i) = 0;
-    end
-end
-% plot(t(1:frame_size), c(1:frame_size))
-plot(t_rx, c)
-xlim([0 frame_size/fs])
-title('Zero-crossings counter per Period')
-ylabel('counts / period')
-
-y_sync = double(c >= 5);
 
 figure()
-stem(y_sync)
+stem(r)
+% plot(t_rx, r)
+title('Channel')
+ylabel('r(n)')
+xlabel('samples')
+% ylabel('r(t)')
+% xlabel('time')
+
+%% RX FSK-2
+% zci = @(v) find(v(:).*circshift(v(:), [-1 0]) <= 0);
+% zx = zci(r);
+% if (true)
+%     figure()
+%     plot(t_rx, r, '-r')
+%     hold on
+%     plot(t_rx(zx), r(zx), 'bp')
+%     hold off
+%     grid
+%     legend('Signal', 'Approximate Zero-Crossings')
+% end
+% c = zeros(1, len_r);
+% for i = 1 : len_r
+%     count = numel(find(t_rx(zx) > (i-1)*T & t_rx(zx) <= i*T));
+%     c(i) = count;
+%     if c(i) > 10
+%         c(i) = 0;
+%     end
+% end
+% % plot(t(1:frame_size), c(1:frame_size))
+% plot(t_rx, c)
+% xlim([0 frame_size/fs])
+% title('Zero-crossings counter per Period')
+% ylabel('counts / period')
+% 
+% y_sync = double(c >= 5);
+% figure()
+% stem(y_sync)
+
+%% RX BPSK
+y_sync = r;
 
 %% RX removing MLS
 if enable_MLS
