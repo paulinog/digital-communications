@@ -27,18 +27,16 @@ sync_vec_rx = mls(k, 1);
 self_corr = xcorr(sync_vec_rx, vec_rx);
 plot(self_corr)
 
-
-max_peak_pos = num_bits * 0.8;
-
+max_peak_pos = max(self_corr)-1;
 start_frame = find(self_corr > max_peak_pos);
 
 for i = 1 : length(start_frame)
     vec_rx_i = vec_rx(start_frame(i) + 1 : start_frame(i) + tam);
 
+    % TEST RX
     if (vec2 == vec_rx_i)
         disp([num2str(i) ': equal to vec2'])
     end
-    
     if (vec3 == vec_rx_i)
         disp([num2str(i) ': equal to vec3'])
     end
