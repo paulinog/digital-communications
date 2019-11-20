@@ -2,21 +2,21 @@ close all;
 clc; clearvars; 
 disp('OFDM example')
 %% User parameters
-numSymbol = 800;
-numSC = 8;
+numSymbol = 80;
 
-fc = 430;
-fs = 8192;
+N = 8; % N-point FFT
+
+fc = 128; % frequencia da portadora
+fs = 8192; % frequencia de amostragem
+
+T = 2/fc;
+R = N/T;
 
 % TODO: verificar se numSymbol for multiplo de 8
 
 %% Time vector
-timestep = 1/fs;
-T = 1/fc;
-
-frame_size = numSymbol;
-tmax = frame_size * T;
-
+timestep = T/fs;
+tmax = numSymbol*T;
 t = 0:timestep:tmax-timestep;
 
 %% TX
@@ -28,22 +28,32 @@ title('TX')
 xlabel('samples')
 
 % serial para paralelo
-a_p = reshape(a, [8 length(a)/8]);
+an = reshape(a, [8 length(a)/8]);
 
 %% TX OFDM
-sk = ifft(a_p, numSC);
+skn = ifft(an, N);
 
 figure()
-hold on
-stem(real(sk))
-stem(imag(sk))
+stem(abs(skn)')
 title('IFFT')
-ylabel('s_k')
-legend('real', 'imaginary')
+ylabel('|s_k|')
+% figure()
+% stem(angle(skn)')
+% title('IFFT')
+% ylabel('\angle{s_k}')
 
-txbb = sk; % TODO
-pt = @(t) sqrt(T/numSC) * sin(pi*numSC*t/T) ./ (pi*t);
-% st = conv (txbb, pt, 'same');
+% paralelo para serial
+sk = reshape(skn, [1 size(skn, 1)*size(skn, 2)]);
+
+txbb = upsample(sk, fs);
+% figure()
+% plot(t, abs(txbb))
+% title('S_k upsampled')
+% xlabel('time (in seconds)')
+
+p = @(t) sqrt(T/N) * sin(pi*N*t/T) ./ (pi*t);
+
+% st = conv (txbb, p(t), 'same');
 %SRF = st.*exp(j*2*pi*f*t)
 
 %% Channel 
@@ -64,19 +74,16 @@ pt = @(t) sqrt(T/numSC) * sin(pi*numSC*t/T) ./ (pi*t);
 % xlabel('time')
 
 %% RX OFDM
-
 % rxbb=hilbert(SRF).*exp(-j2pift);
 % rxbb = rt;
 % rx = conv(rxbb, pt, 'same');
-
-rk = sk; % TODO
 % y_p = sign(real(fft( rk, numSC )));
-y_p = fft( rk, numSC );
 
-size(y_p)
+rkn = skn; % bypass modulation
+yn = fft( rkn, N );
 
 % paralelo para serial
-y = reshape(y_p, [1 size(y_p, 1)*size(y_p, 2)]);
+y = reshape(yn, [1 size(yn, 1)*size(yn, 2)]);
 
 % slicer
 z = (y >= 0) - (y < 0);
@@ -88,7 +95,7 @@ xlabel('samples')
 ylabel('z')
 
 %% RX BER
-err = sum(double(a(1:length(z))) ~= z);
+err = sum(a ~= z);
 if (err >0 )
     error([num2str(err) ' errors'])
 else
