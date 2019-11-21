@@ -9,14 +9,14 @@ N = 8; % N-point FFT
 fc = 128; % frequencia da portadora
 fs = 8192; % frequencia de amostragem
 
-T = 1/fc;
+T = 2/fc;
 R = N/T;
 
 %% Time vector
 timestep = T/fs;
 tmax = numSymbol*T;
 t = 0:timestep:tmax-timestep;
-t_gt = -tmax/2:timestep:tmax/2-timestep;
+t_pt = -tmax/2:timestep:tmax/2-timestep;
 
 %% TX
 a = randsrc(1, numSymbol, [-1 1]);
@@ -32,39 +32,38 @@ an = reshape(a, [8 length(a)/8]);
 %% TX OFDM
 skn = ifft(an, N);
 
-% figure()
-% stem(abs(skn)')
-% title('IFFT')
-% ylabel('|s_k|')
-% xlabel(['samples / ' num2str(N)])
-% figure()
-% stem(angle(skn)')
-% title('IFFT')
-% ylabel('\angle{s_k}')
+figure()
+stem(abs(skn)')
+title('IFFT')
+ylabel('|s_k|')
+xlabel(['samples / ' num2str(N)])
+figure()
+stem(angle(skn)')
+title('IFFT')
+ylabel('\angle{s_k}')
 
 % paralelo para serial
 sk = reshape(skn, [1 size(skn, 1)*size(skn, 2)]);
 
 txbb = upsample(sk, fs);
-% txbb = randsrc(1, numSymbol*fs, 0);
-% t0 = length(txbb)/2;
-% txbb(t0) = 1;
 
-% figure()
-% plot(t, abs(txbb))
-% title('S_k upsampled')
-% xlabel('time (in seconds)')
+figure()
+plot(t, abs(txbb))
+title('S_k upsampled')
+xlabel('time (in seconds)')
 
 % p = @(t) sqrt(T/N) * sin(pi*N*t/T) ./ (pi*t);
-p = @(t) sqrt(N/T) * sinc(N*t/T);
+p = @(t) sqrt(N/T) * sinc(t/T);
 
-gt = p(t_gt);
 figure();
-plot(t_gt,gt);
+pt = p(t_pt);
+plot(t_pt,pt);
+xlabel('time')
+ylabel('p(t)')
 
 %%
 % st = conv (real(txbb), p(t), 'same');
-st = conv (txbb, gt, 'same');
+st = conv (txbb, pt, 'same');
 
 figure()
 subplot(211)
