@@ -70,7 +70,7 @@ end
 %% TX Raised cosine filter
 g = @(t,a) sinc(t/T) .* (cos(a*pi*t/T) ./ (1 - (2*a*t/T).^2));
 
-if (plot_en && plot_en_all)
+if (plot_en && plot_en_all && 0)
     alphas = [0, 0.25, 0.5, 1]; % example figure
     figure()
     subplot(221)
