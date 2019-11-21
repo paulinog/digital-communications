@@ -2,7 +2,7 @@ close all;
 clc; clearvars; 
 disp('OFDM example')
 %% User parameters
-numSymbol = 80;
+numSymbol = 80; % TODO: verificar se numSymbol for multiplo de 8
 
 N = 8; % N-point FFT
 
@@ -11,8 +11,6 @@ fs = 8192; % frequencia de amostragem
 
 T = 2/fc;
 R = N/T;
-
-% TODO: verificar se numSymbol for multiplo de 8
 
 %% Time vector
 timestep = T/fs;
@@ -37,19 +35,20 @@ figure()
 stem(abs(skn)')
 title('IFFT')
 ylabel('|s_k|')
-% figure()
-% stem(angle(skn)')
-% title('IFFT')
-% ylabel('\angle{s_k}')
+xlabel(['samples / ' num2str(N)])
+figure()
+stem(angle(skn)')
+title('IFFT')
+ylabel('\angle{s_k}')
 
 % paralelo para serial
 sk = reshape(skn, [1 size(skn, 1)*size(skn, 2)]);
 
-txbb = upsample(sk, fs);
-% figure()
-% plot(t, abs(txbb))
-% title('S_k upsampled')
-% xlabel('time (in seconds)')
+txbb = upsample(abs(sk), fs);
+figure()
+plot(t, abs(txbb))
+title('S_k upsampled')
+xlabel('time (in seconds)')
 
 p = @(t) sqrt(T/N) * sin(pi*N*t/T) ./ (pi*t);
 
