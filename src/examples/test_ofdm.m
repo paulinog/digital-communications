@@ -45,10 +45,10 @@ ylabel('\angle{s_k}')
 % paralelo para serial
 sk = reshape(skn, [1 size(skn, 1)*size(skn, 2)]);
 
-txbb = upsample(sk, fs);
+sk_up = upsample(sk, fs);
 
 figure()
-plot(t, abs(txbb))
+plot(t, abs(sk_up))
 title('S_k upsampled')
 xlabel('time (in seconds)')
 
@@ -62,7 +62,7 @@ xlabel('time')
 ylabel('p(t)')
 
 %% BB
-st = conv (txbb, pt, 'same');
+st = conv (sk_up, pt, 'same');
 
 figure()
 subplot(211)
@@ -118,15 +118,19 @@ ylabel('\angle{SRF}')
 
 %% RX OFDM
 % rxbb=hilbert(SRF).*exp(-j2pift)
+
+% pt = p(t_pt);
 % rt=conv(rxbb,pt,'same')
 
+% rt=conv(st, p(t_pt), 'same');
 rt = st;
-rxbb = txbb;
 
-rk = downsample(rxbb, fs);
+% rk_up = rt(t = kT);
+% rk_up = sk_up;
+rk = downsample(rt, fs);
 
 % serial para paralelo
-rkn = reshape(rk, [N length(a)/N]);
+rkn = reshape(rk, [N length(rk)/N]);
 
 yn = fft( rkn, N );
 % y_p = sign(real(fft( rkn, N )));
