@@ -2,12 +2,14 @@ close all;
 clc; clearvars; 
 disp('OFDM example')
 %% User parameters
-numSymbol = 32; % TODO: verificar se numSymbol for multiplo de 8
+numSymbol = 16; % TODO: verificar se numSymbol for multiplo de 8
 
 N = 8; % N-point FFT
 
 fc = 128; % frequencia da portadora
-fs = 8192; % frequencia de amostragem
+
+%fs = 8192; % frequencia de amostragem
+fs = 1024;
 
 T = 2/fc;
 R = N/T;
@@ -75,6 +77,8 @@ xlabel('time')
 ylabel('\angle{s(t)}')
 
 %% RF
+% SRF = st.*exp(1j*2*pi*fc*t);
+
 SRF = st.*exp(1j*2*pi*fc*t);
 
 figure()
@@ -101,10 +105,19 @@ ylabel('\angle{SRF}')
 % txbp = real(SRF)*cos(2*pi*fc*t) - imag(SRF)*sin(2*pi*fc*t);
 
 %% Channel 
-N0 = 0.8*max(st);
-n = N0*rand(1, length(t));
-r = st + n;
+% noiseless
 % r = st;
+
+% real valued noise
+% N0 = 0.8*max(st);
+% n = N0*rand(1, length(t));
+% r = st + n;
+
+% complex noise
+snr = -40; %dB
+powerDB = 10*log10(var(st));
+noiseVar = 10.^(0.1*(powerDB-snr)); 
+r = awgn(st, snr);
 
 figure()
 subplot(211)
@@ -120,9 +133,9 @@ ylabel('\angle{r + n}')
 %% RX OFDM
 % rxbb=hilbert(SRF).*exp(-j2pift)
 
-disp('Time to compute convolution:')
 tic
 rt = conv(r, p(t_pt), 'same');
+disp('Time to compute convolution:')
 toc
 
 figure()
@@ -159,8 +172,9 @@ ylabel('z')
 %% RX BER
 err = sum(a ~= z);
 if (err >0 )
-    error([num2str(err) ' errors'])
+    error(['Total of errors: ' num2str(err) ' (' ...
+           num2str(100*err/numSymbol) '%)']);
 else
-    disp('no errors')
+    disp('no errors');
 end
 
