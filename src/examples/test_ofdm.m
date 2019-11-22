@@ -13,8 +13,8 @@ T = 2/fc;
 R = N/T;
 
 %% Time vector
-timestep = T/fs;
-tmax = numSymbol*T;
+timestep = T/(N*fs);
+tmax = numSymbol*T/N;
 t = 0:timestep:tmax-timestep;
 t_pt = -tmax/2:timestep:tmax/2-timestep;
 
@@ -27,7 +27,7 @@ title('TX')
 xlabel('samples')
 
 % serial para paralelo
-an = reshape(a, [8 length(a)/8]);
+an = reshape(a, [N length(a)/N]);
 
 %% TX OFDM
 skn = ifft(an, N);
@@ -53,7 +53,7 @@ title('S_k upsampled')
 xlabel('time (in seconds)')
 
 % p = @(t) sqrt(T/N) * sin(pi*N*t/T) ./ (pi*t);
-p = @(t) sqrt(N/T) * sinc(t/T);
+p = @(t) sqrt(N/T) * sinc(N*t/T);
 
 figure();
 pt = p(t_pt);
@@ -61,8 +61,7 @@ plot(t_pt,pt);
 xlabel('time')
 ylabel('p(t)')
 
-%%
-% st = conv (real(txbb), p(t), 'same');
+%% BB
 st = conv (txbb, pt, 'same');
 
 figure()
@@ -75,8 +74,8 @@ plot(t,angle(st))
 xlabel('time')
 ylabel('\angle{s(t)}')
 
-%SRF = st.*exp(j*2*pi*f*t)
-SRF = st.*exp(j*2*pi*fc*t);
+%% RF
+SRF = st.*exp(1j*2*pi*fc*t);
 
 figure()
 hold on
@@ -93,6 +92,12 @@ plot(t,angle(SRF))
 xlabel('time')
 ylabel('\angle{SRF}')
 
+%%
+% s(t) = a + jb = |s| * e^j<s = |s| * (cos(<s) + jsin(<s))
+% s(t)*e^jx = (Re(s)*cos(x) - Im(s)*sin(x))
+%             + j (Re(s)*sin(x) + Im(s)*cos(x))
+%
+% txbp = real(SRF)*cos(2*pi*fc*t) - imag(SRF)*sin(2*pi*fc*t);
 
 %% Channel 
 % rt = st;
@@ -112,13 +117,19 @@ ylabel('\angle{SRF}')
 % xlabel('time')
 
 %% RX OFDM
-% rxbb=hilbert(SRF).*exp(-j2pift);
-% rxbb = rt;
-% rx = conv(rxbb, pt, 'same');
-% y_p = sign(real(fft( rk, numSC )));
+% rxbb=hilbert(SRF).*exp(-j2pift)
+% rt=conv(rxbb,pt,'same')
 
-rkn = skn; % bypass modulation
+rt = st;
+rxbb = txbb;
+
+rk = downsample(rxbb, fs);
+
+% serial para paralelo
+rkn = reshape(rk, [N length(a)/N]);
+
 yn = fft( rkn, N );
+% y_p = sign(real(fft( rkn, N )));
 
 % paralelo para serial
 y = reshape(yn, [1 size(yn, 1)*size(yn, 2)]);
