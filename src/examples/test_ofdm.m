@@ -2,7 +2,7 @@ close all;
 clc; clearvars; 
 disp('OFDM example')
 %% User parameters
-numSymbol = 80; % TODO: verificar se numSymbol for multiplo de 8
+numSymbol = 32; % TODO: verificar se numSymbol for multiplo de 8
 
 N = 8; % N-point FFT
 
@@ -81,6 +81,7 @@ figure()
 hold on
 plot(real(SRF))
 plot(imag(SRF))
+legend('real','imag')
 
 figure()
 subplot(211)
@@ -100,33 +101,41 @@ ylabel('\angle{SRF}')
 % txbp = real(SRF)*cos(2*pi*fc*t) - imag(SRF)*sin(2*pi*fc*t);
 
 %% Channel 
-% rt = st;
+N0 = 0.8*max(st);
+n = N0*rand(1, length(t));
+r = st + n;
+% r = st;
 
-% figure()
-% hold on
-% stem(real(rt))
-% stem(imag(rt))
-% hold off
-% title('Complex Channel')
-% ylabel('r(n)')
-% xlabel('samples')
-% legend('real', 'imaginary')
+figure()
+subplot(211)
+plot(t,abs(r))
+xlabel('time')
+ylabel('|r + n|')
+subplot(212)
+plot(t,angle(r))
+xlabel('time')
+ylabel('\angle{r + n}')
 
-% plot(t_rx, r)
-% ylabel('r(t)')
-% xlabel('time')
 
 %% RX OFDM
 % rxbb=hilbert(SRF).*exp(-j2pift)
 
-% pt = p(t_pt);
-% rt=conv(rxbb,pt,'same')
+disp('Time to compute convolution:')
+tic
+rt = conv(r, p(t_pt), 'same');
+toc
 
-% rt=conv(st, p(t_pt), 'same');
-rt = st;
+figure()
+subplot(211)
+plot(t,abs(rt))
+xlabel('time')
+ylabel('|r(t)|')
+subplot(212)
+plot(t,angle(rt))
+xlabel('time')
+ylabel('\angle{r(t)}')
 
 % rk_up = rt(t = kT);
-% rk_up = sk_up;
 rk = downsample(rt, fs);
 
 % serial para paralelo
