@@ -6,13 +6,14 @@ numSymbol = 16; % TODO: verificar se numSymbol for multiplo de 8
 
 N = 8; % N-point FFT
 
-fc = 128; % frequencia da portadora
+% fc = 128; % frequencia da portadora
+fc = 256;
 
-%fs = 8192; % frequencia de amostragem
-fs = 1024;
+fs = 8192; % frequencia de amostragem
+% fs = 1024;
 
-T = 2/fc;
-R = N/T;
+T = 1; % periodo do simbolo, em segundos
+% R = N/T;
 
 %% Time vector
 timestep = T/(N*fs);
@@ -76,26 +77,52 @@ plot(t,angle(st))
 xlabel('time')
 ylabel('\angle{s(t)}')
 
+%%
+figure()
+hold on
+plot(t, real(st))
+plot(t, imag(st))
+legend('real','imag')
+xlabel('time')
+ylabel('s(t)')
+
+
 %% RF
 % SRF = st.*exp(1j*2*pi*fc*t);
 
-SRF = st.*exp(1j*2*pi*fc*t);
+SRF = real(st).*cos(2*pi*fc*t) - imag(st).*sin(2*pi*fc*t);
 
 figure()
 hold on
-plot(real(SRF))
-plot(imag(SRF))
+plot(t, real(SRF))
+plot(t, imag(SRF))
 legend('real','imag')
+xlabel('time')
+ylabel('SRF')
+
+%%
+RRF_I = SRF .*cos(2*pi*fc*t);
+RRF_Q = SRF .* -sin(2*pi*fc*t);
 
 figure()
-subplot(211)
-plot(t,abs(SRF))
+hold on
+plot(t, RRF_I)
+plot(t, RRF_Q)
+legend('real','imag')
 xlabel('time')
-ylabel('|SRF|')
-subplot(212)
-plot(t,angle(SRF))
+ylabel('RRF')
+
+%%
+LP_I = lowpass(RRF_I, fc/2, fs);
+LP_Q = lowpass(RRF_Q, fc/2, fs);
+
+figure()
+hold on
+plot(t, LP_I)
+plot(t, LP_Q)
+legend('real','imag')
 xlabel('time')
-ylabel('\angle{SRF}')
+ylabel('LP')
 
 %%
 % s(t) = a + jb = |s| * e^j<s = |s| * (cos(<s) + jsin(<s))
@@ -114,7 +141,8 @@ ylabel('\angle{SRF}')
 % r = st + n;
 
 % complex noise
-snr = -40; %dB
+% snr = -40; %dB
+snr = 0;
 powerDB = 10*log10(var(st));
 noiseVar = 10.^(0.1*(powerDB-snr)); 
 r = awgn(st, snr);
