@@ -11,11 +11,15 @@ Penso que a implementação do programa OFDM deve seguir as seguintes etapas
 txbb=[mls a mls]
 4 - Outra opção, e é a que se usa na prática, é repetir um trecho do próprio vetor a, ou seja, inserir um prefixo cíclico. De tal forma a gerar o seguinte sinal
 txbb=[a(length(a)/2:end)  a]
-4 - Convoluir txbb com o pulso p(t) dado no Barry página 235, Eq. 6.85.
-s1=conv(txbb,pt)
-5 - Em seguida passar o sinal para RF
+4 - fazer o upsampling do sinal txbb.
+No Matlab ->
+upsample(txbb,número de zeros entre 0 e T/N do pulso p(t1)).
+5 - Convoluir txbb com o pulso p(t1) dado no Barry página 235, Eq. 6.85. Não esqueça de fazer t negativo antes de gerar o p(t1), uma dica é fazer t1=[-5T/N:1/fs+0.0001:5*T/N]; Esse valor 0.0001 deve ser inserido para que p(t1) não gere um NaN.
+s1=conv(txbb,pt,'same')
+6 - Em seguida passar o sinal para RF
 SRF=s1.*exp(j2pi f t)
-6 - Esse sinal é gravado em um arquivo .wav.
+Esse t é diferente de t1 pois t é só positivo.
+7 - Esse sinal é gravado em um arquivo .wav.
 __________________________________________________________________________
 __________________________________________________________________________
 RX
