@@ -16,22 +16,43 @@ fs = 8192; % frequencia de amostragem
 T = 1; % periodo do simbolo, em segundos
 % R = N/T;
 
-%% Time vector
+%% Parametros do FEC
+enable_FEC = true;
+trellis = poly2trellis(3, [5 7]);
+parity_ratio = 2;
+
+%% Vetor Tempo
 timestep = T/(N*fs);
-tmax = numSymbol*T/N;
+
+frame_size = numSymbol;
+if enable_FEC
+    frame_size = frame_size * parity_ratio;
+end
+
+tmax = frame_size*T/N;
 t = 0:timestep:tmax-timestep;
 t_pt = -tmax/2:timestep:tmax/2-timestep;
 
 %% TX
-a = randsrc(1, numSymbol, [-1 1]);
+a = randsrc(1, numSymbol, [0 1]);
 
 figure()
 stem(a)
 title('TX')
 xlabel('samples')
 
-% serial para paralelo
-an = reshape(a, [N length(a)/N]);
+%% TX FEC
+if enable_FEC
+    a_enc = convenc(a, trellis);
+else
+    a_enc = a;
+end
+
+%% TX BPSK
+a_mod = (a_enc >= 0.5) - (a_enc < 0.5);
+
+%% TX Serial para paralelo
+an = reshape(a_mod, [N length(a_enc)/N]);
 
 %% TX OFDM
 skn = ifft(an, N);
@@ -46,9 +67,10 @@ stem(angle(skn)')
 title('IFFT')
 ylabel('\angle{s_k}')
 
-% paralelo para serial
+%% TX Paralelo para serial
 sk = reshape(skn, [1 size(skn, 1)*size(skn, 2)]);
 
+%% TX Upsample
 sk_up = upsample(sk, fs);
 
 figure()
@@ -65,7 +87,7 @@ plot(t_pt,pt);
 xlabel('time')
 ylabel('p(t)')
 
-%% BB
+%% TX Base Band
 st = conv (sk_up, pt, 'same');
 
 figure()
@@ -78,7 +100,7 @@ plot(t,angle(st))
 xlabel('time')
 ylabel('\angle{s(t)}')
 
-%%
+%% TX sinal complexo
 figure()
 hold on
 plot(t, real(st))
@@ -87,7 +109,7 @@ legend('real','imag')
 xlabel('time')
 ylabel('s(t)')
 
-%% RF
+%% TX Pass Band
 SRF = real(st).*cos(2*pi*fc*t) - imag(st).*sin(2*pi*fc*t);
 
 figure()
@@ -162,22 +184,6 @@ plot(t,angle(rt))
 xlabel('time')
 ylabel('\angle{r(t)}')
 
-%% RX OFDM (conv)
-% tic
-% rt = conv(r, p(t_pt), 'same');
-% disp('Time to compute convolution:')
-% toc
-% 
-% figure()
-% subplot(211)
-% plot(t,abs(rt))
-% xlabel('time')
-% ylabel('|r(t)|')
-% subplot(212)
-% plot(t,angle(rt))
-% xlabel('time')
-% ylabel('\angle{r(t)}')
-
 %% RX OFDM
 % rk_up = rt(t = kT);
 rk = downsample(rt, fs);
@@ -185,26 +191,33 @@ rk = downsample(rt, fs);
 % serial para paralelo
 rkn = reshape(rk, [N length(rk)/N]);
 
-yn = fft( rkn, N );
 % y_p = sign(real(fft( rkn, N )));
+yn = fft( rkn, N );
 
-% paralelo para serial
+%% RX Paralelo para serial
 y = reshape(yn, [1 size(yn, 1)*size(yn, 2)]);
 
 %% RX Slicer
-z = (y >= 0) - (y < 0);
+z_enc = (y > 0);
 
 figure()
-stem(z)
+stem(z_enc)
 title('RX')
 xlabel('samples')
 ylabel('z')
+
+%% RX FEC
+if enable_FEC
+    z = vitdec(z_enc, trellis, 20,  'trunc', 'hard');
+else
+    z = z_enc;
+end
 
 %% RX BER
 err = sum(a ~= z);
 if (err >0 )
     error(['Total of errors: ' num2str(err) ' (' ...
-           num2str(100*err/numSymbol) '%)']);
+           num2str(100*err/frame_size) '%)']);
 else
     disp('no errors');
 end
