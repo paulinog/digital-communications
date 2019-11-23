@@ -7,7 +7,8 @@ numSymbol = 16; % TODO: verificar se numSymbol for multiplo de 8
 N = 8; % N-point FFT
 
 % fc = 128; % frequencia da portadora
-fc = 256;
+% fc = 256;
+fc = 1e3;
 
 fs = 8192; % frequencia de amostragem
 % fs = 1024;
@@ -86,6 +87,9 @@ legend('real','imag')
 xlabel('time')
 ylabel('s(t)')
 
+%%
+figure;
+pspectrum(real(st));
 
 %% RF
 % SRF = st.*exp(1j*2*pi*fc*t);
@@ -101,6 +105,10 @@ xlabel('time')
 ylabel('SRF')
 
 %%
+figure()
+pspectrum(real(SRF));
+
+%%
 RRF_I = SRF .*cos(2*pi*fc*t);
 RRF_Q = SRF .* -sin(2*pi*fc*t);
 
@@ -113,19 +121,18 @@ xlabel('time')
 ylabel('RRF')
 
 %%
-% LP_I = lowpass(RRF_I, fc/2, fs);
+% LP_I = lowpass(RRF_I, fc, fs);
 % LP_Q = lowpass(RRF_Q, fc/2, fs);
 
-len_t = length(t);
-% len_t = 1/timestep;
-LP_I = lowpass(RRF_I, 0.1);
-LP_Q = lowpass(RRF_Q, 0.1);
+[num, den] = butter(10, fc*2*timestep);
+LP_I = amdemod(SRF, fc, 1/timestep, 0, 0, num, den);
+% LP_Q = amdemod(RRF_Q, fc, fs, 0, 0, num, den);
 
 figure()
 hold on
 plot(t, LP_I)
-plot(t, LP_Q)
-legend('real','imag')
+% plot(t, LP_Q)
+% legend('real','imag')
 xlabel('time')
 ylabel('LP')
 
