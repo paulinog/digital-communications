@@ -2,7 +2,7 @@ close all;
 clc; clearvars; 
 disp('OFDM example')
 %% User parameters
-numSymbol = 80; % TODO: verificar se numSymbol for multiplo de 8
+numSymbol = 32; % TODO: verificar se numSymbol for multiplo de 8
 
 N = 8; % N-point FFT
 
@@ -26,6 +26,10 @@ enable_MLS = true;
 k = 8;
 sync_bits = 2^k-1;
 
+% TEST channel delays
+ch_delay1 = 100*round(100*numSymbol*rand(1)); % random spacing
+ch_delay2 = 100*round(100*numSymbol*rand(1));
+
 %% Vetor Tempo
 timestep = T/(N*fs);
 
@@ -34,7 +38,7 @@ if enable_FEC
     frame_size = frame_size * parity_ratio;
 end
 if enable_MLS
-    frame_size = frame_size + sync_bits;
+    frame_size = frame_size + 2*sync_bits;
 end
 num_padding = zero_padding(frame_size, N);
 if num_padding > 0
@@ -60,9 +64,10 @@ else
 end
 
 %% TX MLS
-if enable_MLS
+if 0% enable_MLS
     sync_vec = double(mls(k, 1) > 0);
-    a_sync = [sync_vec a_enc]; % concatenate
+%     a_sync = [sync_vec a_enc]; % concatenate
+    a_sync = [sync_vec a_enc sync_vec]; % concatenate
 else
     a_sync = a_enc;
 end
@@ -71,6 +76,7 @@ end
 a_mod = (a_sync >= 0.5) - (a_sync < 0.5);
 
 %% TX Serial para paralelo
+num_padding = zero_padding(length(a_mod), N);
 
 if num_padding > 0
     a_mod = [a_mod zeros(1, num_padding)];
@@ -94,8 +100,19 @@ ylabel('\angle{s_k}')
 %% TX Paralelo para serial
 sk = reshape(skn, [1 size(skn, 1)*size(skn, 2)]);
 
+% Add by Marcos
+if  enable_MLS
+    sync_vec = double(mls(k, 1) > 0);
+%     a_sync = [sync_vec a_enc]; % concatenate
+    sk_sync = [sync_vec sk sync_vec]; % concatenate
+else
+    sk_sync = sk;
+end
+
 %% TX Upsample
-sk_up = upsample(sk, fs);
+% sk_up = upsample(sk, fs);
+sk_up = upsample(sk_sync, fs); %Add by Marcos
+
 
 figure()
 plot(t, abs(sk_up))
@@ -145,9 +162,18 @@ xlabel('time')
 ylabel('SRF')
 
 %% Channel 
+close all
+
 % noiseless
 r = SRF;
+% r = [zeros(1, ch_delay1) SRF];
+% r = [zeros(1, ch_delay1) SRF zeros(1, ch_delay2)];
+len_r = length(r);
+%%
 
+t_rx = 0:timestep:(len_r-1)*timestep;
+
+%%
 % real valued noise
 % N0 = 0.8*max(st);
 % n = N0*rand(1, length(t));
@@ -159,25 +185,26 @@ r = SRF;
 % powerDB = 10*log10(var(SRF));
 % noiseVar = 10.^(0.1*(powerDB-snr)); 
 % r = awgn(SRF, snr);
-
+%%
 figure()
 subplot(211)
-plot(t,abs(r))
+plot(t_rx,abs(r))
 xlabel('time')
 ylabel('|r + n|')
 subplot(212)
-plot(t,angle(r))
+plot(t_rx,angle(r))
 xlabel('time')
 ylabel('\angle{r + n}')
 
 %% RX RF
-RRF_I = r .*cos(2*pi*fc*t);
-RRF_Q = r .* -sin(2*pi*fc*t);
+phaseRF = 0;
+RRF_I = r .*cos(2*pi*fc*t_rx + phaseRF);
+RRF_Q = r .* -sin(2*pi*fc*t_rx + phaseRF);
 
 figure()
 hold on
-plot(t, RRF_I)
-plot(t, RRF_Q)
+plot(t_rx, RRF_I)
+plot(t_rx, RRF_Q)
 legend('real','imag')
 xlabel('time')
 ylabel('RRF')
@@ -189,8 +216,8 @@ LP_Q = filtfilt(num, den, RRF_Q) * 2;
 
 figure()
 hold on
-plot(t, LP_I)
-plot(t, LP_Q)
+plot(t_rx, LP_I)
+plot(t_rx, LP_Q)
 legend('real','imag')
 xlabel('time')
 ylabel('LP')
@@ -200,17 +227,23 @@ rt = LP_I + 1j*LP_Q;
 
 figure()
 subplot(211)
-plot(t,abs(rt))
+plot(t_rx,abs(rt))
 xlabel('time')
 ylabel('|r(t)|')
 subplot(212)
-plot(t,angle(rt))
+plot(t_rx,angle(rt))
 xlabel('time')
 ylabel('\angle{r(t)}')
 
 %% RX OFDM
 % rk_up = rt(t = kT);
 rk = downsample(rt, fs);
+
+num_padding = zero_padding(length(rk), N);
+
+if num_padding > 0
+    rk = [rk zeros(1, num_padding)];
+end
 
 % serial para paralelo
 rkn = reshape(rk, [N length(rk)/N]);
@@ -242,11 +275,12 @@ if enable_MLS
     xlabel('sample')
 
     max_peak_pos = max(self_corr);
-    if(length(max_peak_pos) ~= 1)
-        warning('max_peak_pos = ')
-        disp(max_peak_pos)
-    end
-    start_frame = find(self_corr(length(z_sync): end) == max_peak_pos) + sync_bits;
+%     if(length(max_peak_pos) ~= 1)
+%         warning('max_peak_pos = ')
+%         disp(max_peak_pos)
+%     end
+%     start_frame = find(self_corr(length(z_sync): end) == max_peak_pos) + sync_bits;
+    start_frame = min(find(self_corr(length(z_sync): end) == max_peak_pos)) + sync_bits;
     if(isempty(start_frame) || (length(start_frame) > 1))
         warning('start_frame =')
         disp(start_frame)
@@ -258,7 +292,8 @@ if enable_MLS
             start_frame = start_frame(1);
         end
     end
-    end_frame = (start_frame-1) + (frame_size - sync_bits - num_padding);
+%     end_frame = (start_frame-1) + (frame_size - sync_bits - num_padding);
+    end_frame = max(find(self_corr(length(z_sync): end) == max_peak_pos)) - 1;
     z_enc = z_sync(start_frame : end_frame);
 else
     z_enc = z_sync(1:frame_size);
