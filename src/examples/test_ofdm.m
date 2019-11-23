@@ -16,21 +16,19 @@ fs = 8192; % frequencia de amostragem
 T = 1; % periodo do simbolo, em segundos
 % R = N/T;
 
+enable_plot = false;
+
 %% Parametros do FEC
-enable_FEC = true;
+enable_FEC = false;
 trellis = poly2trellis(3, [5 7]);
 parity_ratio = 2;
 
 %% Parametros do MLS
 enable_MLS = true;
-k = 8;
+k = 5;
 sync_bits = 2^k-1;
 
-% TEST channel delays
-ch_delay1 = 100*round(100*numSymbol*rand(1)); % random spacing
-ch_delay2 = 100*round(100*numSymbol*rand(1));
-
-%% Vetor Tempo
+%% TX Vetor tempo
 timestep = T/(N*fs);
 
 frame_size = numSymbol;
@@ -48,13 +46,15 @@ tmax = frame_size*T/N;
 t = 0:timestep:tmax-timestep;
 t_pt = -tmax/2:timestep:tmax/2-timestep;
 
-%% TX
+%% TX Fonte
 a = randsrc(1, numSymbol, [0 1]);
 
-figure()
-stem(a)
-title('TX')
-xlabel('samples')
+if enable_plot
+    figure()
+    stem(a)
+    title('TX')
+    xlabel('samples')
+end
 
 %% TX FEC
 if enable_FEC
@@ -63,118 +63,116 @@ else
     a_enc = a;
 end
 
-%% TX MLS
-if 0%enable_MLS
-    sync_vec = double(mls(k, 1) > 0);
-%     a_sync = [sync_vec a_enc]; % concatenate
-    a_sync = [sync_vec a_enc sync_vec]; % concatenate
-else
-    a_sync = a_enc;
-end
-
 %% TX BPSK
-a_mod = (a_sync >= 0.5) - (a_sync < 0.5);
+a_mod = (a_enc >= 0.5) - (a_enc < 0.5);
 
 %% TX Serial para paralelo
 num_padding = zero_padding(length(a_mod), N);
-
 if num_padding > 0
     a_mod = [a_mod zeros(1, num_padding)];
 end
-
 an = reshape(a_mod, [N length(a_mod)/N]);
 
-%% TX OFDM
+%% TX OFDM Mux
 skn = ifft(an, N);
 
-figure()
-stem(abs(skn)')
-title('IFFT')
-ylabel('|s_k|')
-xlabel(['samples / ' num2str(N)])
-figure()
-stem(angle(skn)')
-title('IFFT')
-ylabel('\angle{s_k}')
+if enable_plot
+    figure()
+    subplot(211)
+    stem(abs(skn)')
+    title('IFFT')
+    ylabel('|s_k|')
+    subplot(212)
+    stem(angle(skn)')
+    title('IFFT')
+    ylabel('\angle{s_k}')
+    xlabel(['samples / ' num2str(N)])
+end
 
 %% TX Paralelo para serial
 sk = reshape(skn, [1 size(skn, 1)*size(skn, 2)]);
 
-% Add by Marcos
+%% TX MLS
 if enable_MLS
     sync_vec = double((mls(k, 1) > 0.5) - (mls(k, 1) <= 0.5));
-%     a_sync = [sync_vec a_enc]; % concatenate
     sk_sync = [sync_vec sk sync_vec]; % concatenate
+    
+    %TODO: zero padding ???
 else
     sk_sync = sk;
 end
 
 %% TX Upsample
-% sk_up = upsample(sk, fs);
-sk_up = upsample(sk_sync, fs); %Add by Marcos
-
+sk_up = upsample(sk_sync, fs);
 t_tx = 0:timestep:(length(sk_up)-1)*timestep;
 
-figure()
-plot(t_tx, abs(sk_up))
-title('S_k upsampled')
-xlabel('time (in seconds)')
+if enable_plot
+    figure()
+    subplot(211)
+    plot(t_tx,abs(sk_up))
+    ylabel('|s_{up}[k]|')
+    title('s[k] upsampled')
+    subplot(212)
+    plot(t_tx,angle(sk_up))
+    xlabel('time')
+    ylabel('\angle{s_{up}[k]}')
+    xlabel('time')
+end 
 
+%% TX Formatador de pulso
 % p = @(t) sqrt(T/N) * sin(pi*N*t/T) ./ (pi*t);
 p = @(t) sqrt(N/T) * sinc(N*t/T);
-
-figure();
 pt = p(t_pt);
-plot(t_pt,pt);
-xlabel('time')
-ylabel('p(t)')
 
-%% TX Base Band
+if enable_plot
+    figure();
+    plot(t_pt, pt);
+    xlabel('time')
+    ylabel('p(t)')
+    title('Pulse shapper function')
+end
+
+%% TX Banda base
 st = conv (sk_up, pt, 'same');
 
-figure()
-subplot(211)
-plot(t_tx,abs(st))
-xlabel('time')
-ylabel('|s(t)|')
-subplot(212)
-plot(t_tx,angle(st))
-xlabel('time')
-ylabel('\angle{s(t)}')
+if enable_plot
+    % amplitude e fase
+    figure()
+    subplot(211)
+    plot(t_tx,abs(st))
+    xlabel('time')
+    ylabel('|s(t)|')
+    subplot(212)
+    plot(t_tx,angle(st))
+    xlabel('time')
+    ylabel('\angle{s(t)}')
+    % sinal complexo
+    figure()
+    hold on
+    plot(t_tx, real(st))
+    plot(t_tx, imag(st))
+    legend('real','imag')
+    xlabel('time')
+    ylabel('s(t)')
+end
 
-%% TX sinal complexo
-figure()
-hold on
-plot(t_tx, real(st))
-plot(t_tx, imag(st))
-legend('real','imag')
-xlabel('time')
-ylabel('s(t)')
-
-%% TX Pass Band
+%% TX Banda passante
 SRF = real(st).*cos(2*pi*fc*t_tx) - imag(st).*sin(2*pi*fc*t_tx);
 
-figure()
-hold on
-plot(t_tx, real(SRF))
-plot(t_tx, imag(SRF))
-legend('real','imag')
-xlabel('time')
-ylabel('SRF')
+if enable_plot
+    figure()
+    hold on
+    plot(t_tx, real(SRF))
+    plot(t_tx, imag(SRF))
+    legend('real','imag')
+    xlabel('time')
+    ylabel('SRF')
+end
 
-%% Channel 
-close all
-
+%% Channel
 % noiseless
 r = SRF;
-% r = [zeros(1, ch_delay1) SRF];
-% r = [zeros(1, ch_delay1) SRF zeros(1, ch_delay2)];
-len_r = length(r);
-%%
 
-t_rx = 0:timestep:(len_r-1)*timestep;
-
-%%
 % real valued noise
 % N0 = 0.8*max(st);
 % n = N0*rand(1, length(t));
@@ -186,101 +184,117 @@ t_rx = 0:timestep:(len_r-1)*timestep;
 % powerDB = 10*log10(var(SRF));
 % noiseVar = 10.^(0.1*(powerDB-snr)); 
 % r = awgn(SRF, snr);
-%%
-figure()
-subplot(211)
-plot(t_rx,abs(r))
-xlabel('time')
-ylabel('|r + n|')
-subplot(212)
-plot(t_rx,angle(r))
-xlabel('time')
-ylabel('\angle{r + n}')
+
+% TEST channel delays
+% ch_delay1 = 100*round(100*numSymbol*rand(1)); % random spacing
+% ch_delay2 = 100*round(100*numSymbol*rand(1));
+% r = [zeros(1, ch_delay1) SRF];
+% r = [zeros(1, ch_delay1) SRF zeros(1, ch_delay2)];
+
+%% RX Vetor tempo
+len_r = length(r);
+t_rx = 0:timestep:(len_r-1)*timestep;
+
+if enable_plot
+    figure()
+    subplot(211)
+    plot(t_rx,abs(r))
+    xlabel('time')
+    ylabel('|r + n|')
+    subplot(212)
+    plot(t_rx,angle(r))
+    xlabel('time')
+    ylabel('\angle{r + n}')
+end 
 
 %% RX RF
 phaseRF = 0;
 RRF_I = r .*cos(2*pi*fc*t_rx + phaseRF);
 RRF_Q = r .* -sin(2*pi*fc*t_rx + phaseRF);
 
-figure()
-hold on
-plot(t_rx, RRF_I)
-plot(t_rx, RRF_Q)
-legend('real','imag')
-xlabel('time')
-ylabel('RRF')
+if enable_plot
+    figure()
+    hold on
+    plot(t_rx, RRF_I)
+    plot(t_rx, RRF_Q)
+    legend('real','imag')
+    xlabel('time')
+    ylabel('RRF')
+end 
 
 %% RX LP
 [num, den] = butter(10, fc*2*timestep, 'low');
 LP_I = filtfilt(num, den, RRF_I) * 2;
 LP_Q = filtfilt(num, den, RRF_Q) * 2;
 
-figure()
-hold on
-plot(t_rx, LP_I)
-plot(t_rx, LP_Q)
-legend('real','imag')
-xlabel('time')
-ylabel('LP')
+if enable_plot
+    figure()
+    hold on
+    plot(t_rx, LP_I)
+    plot(t_rx, LP_Q)
+    legend('real','imag')
+    xlabel('time')
+    ylabel('LP')
+end
 
 %% RX Complex signal
 rt = LP_I + 1j*LP_Q;
 
-figure()
-subplot(211)
-plot(t_rx,abs(rt))
-xlabel('time')
-ylabel('|r(t)|')
-subplot(212)
-plot(t_rx,angle(rt))
-xlabel('time')
-ylabel('\angle{r(t)}')
+if enable_plot
+    figure()
+    subplot(211)
+    plot(t_rx,abs(rt))
+    xlabel('time')
+    ylabel('|r(t)|')
+    subplot(212)
+    plot(t_rx,angle(rt))
+    xlabel('time')
+    ylabel('\angle{r(t)}')
+end
 
-%% RX OFDM
+%% RX OFDM downsample
 % rk_up = rt(t = kT);
 rk = downsample(rt, fs);
 
-num_padding = zero_padding(length(rk), N);
-
-if num_padding > 0
-    rk = [rk zeros(1, num_padding)];
-end
-
-%% MLS Removal - Marcos
+%% RX Remover MLS
 if enable_MLS
     sync_vec2 = double((mls(k, 1) > 0.5) - (mls(k, 1) <= 0.5));
     self_corr = xcorr(rk, sync_vec2);
-
-    max_peak_pos = 0.95*max(real(self_corr));
+    
+    max_peak_pos = 0.8*max(real(self_corr));
     start_frame = min(find(self_corr(length(rk): end) >= max_peak_pos)) + sync_bits;
 
 %     end_frame = (start_frame-1) + (frame_size - sync_bits - num_padding);
     end_frame = max(find(self_corr(length(rk): end) >= max_peak_pos)) - 1;
     frame_size = end_frame - start_frame + 1;
     
-    figure()
-    plot(real(self_corr));
-    xlim([length(rk)-length(sync_vec) length(rk)+frame_size])
-    title('Cross correlation')
-    ylabel('R')
-    xlabel('sample')
-    
+    if enable_plot
+        figure()
+        plot(real(self_corr));
+        %xlim([length(rk)-length(sync_vec) length(rk)+frame_size])
+        title('Cross correlation')
+        ylabel('R')
+        xlabel('sample')
+    end
 else
     start_frame = 1;
     end_frame = length(rk);
 end
-
 rk_enc = rk(start_frame : end_frame);
 
-start_frame
-end_frame
-frame_size
+% start_frame
+% end_frame
+% frame_size
 
-%%
-% serial para paralelo
+%% RX Serial para paralelo
+num_padding = zero_padding(length(rk_enc), N);
+if num_padding > 0
+    rk_enc = [rk_enc zeros(1, num_padding)];
+end
 rkn = reshape(rk_enc, [N length(rk_enc)/N]);
 
-% y_p = sign(real(fft( rkn, N )));
+%% RX OFDM Demux
+% yn = sign(real(fft( rkn, N )));
 yn = fft( rkn, N );
 
 %% RX Paralelo para serial
@@ -289,61 +303,30 @@ y = reshape(yn, [1 size(yn, 1)*size(yn, 2)]);
 %% RX Slicer
 z_sync = (y > 0);
 
-figure()
-stem(z_sync)
-title('RX')
-xlabel('samples')
-ylabel('z')
-
-%% RX removing MLS
-if 0%enable_MLS
-    sync_vec2 = double(mls(k, 1) > 0);
-    self_corr = xcorr(z_sync, sync_vec2);
+if enable_plot
     figure()
-    plot(self_corr);
-    xlim([length(z_sync)-length(sync_vec) length(z_sync)+frame_size])
-    title('Cross correlation')
-    ylabel('R')
-    xlabel('sample')
-
-    max_peak_pos = max(self_corr);
-%     if(length(max_peak_pos) ~= 1)
-%         warning('max_peak_pos = ')
-%         disp(max_peak_pos)
-%     end
-%     start_frame = find(self_corr(length(z_sync): end) == max_peak_pos) + sync_bits;
-    start_frame = min(find(self_corr(length(z_sync): end) == max_peak_pos)) + sync_bits;
-    if(isempty(start_frame) || (length(start_frame) > 1))
-        warning('start_frame =')
-        disp(start_frame)
-
-        if isempty(start_frame)
-            start_frame = 1;
-        end
-        if (length(start_frame) > 1)
-            start_frame = start_frame(1);
-        end
-    end
-%     end_frame = (start_frame-1) + (frame_size - sync_bits - num_padding);
-    end_frame = max(find(self_corr(length(z_sync): end) == max_peak_pos)) - 1;
-    z_enc = z_sync(start_frame : end_frame);
-else
-    z_enc = z_sync(1:frame_size);
+    stem(z_sync)
+    title('RX')
+    xlabel('samples')
+    ylabel('z')
 end
 
 %% RX FEC
 if enable_FEC
-    z = vitdec(z_enc, trellis, 20,  'trunc', 'hard');
+    z = vitdec(z_sync, trellis, 20,  'trunc', 'hard');
 else
-    z = z_enc;
+    z = z_sync;
 end
 
 %% RX BER
-err = sum(a ~= z);
-if (err >0 )
-    error(['Total of errors: ' num2str(err) ' (' ...
-           num2str(100*err/frame_size) '%)']);
+if length(z) >= length(a)
+    err = sum(a ~= z(1:length(a)));
+    if (err >0 )
+        error(['Total of errors: ' num2str(err) ' (' ...
+               num2str(100*err/frame_size) '%)']);
+    else
+        disp('no errors');
+    end
 else
-    disp('no errors');
+    error('wrong size of z')
 end
-
