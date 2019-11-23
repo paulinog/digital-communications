@@ -113,8 +113,13 @@ xlabel('time')
 ylabel('RRF')
 
 %%
-LP_I = lowpass(RRF_I, fc/2, fs);
-LP_Q = lowpass(RRF_Q, fc/2, fs);
+% LP_I = lowpass(RRF_I, fc/2, fs);
+% LP_Q = lowpass(RRF_Q, fc/2, fs);
+
+len_t = length(t);
+% len_t = 1/timestep;
+LP_I = lowpass(RRF_I, 0.1);
+LP_Q = lowpass(RRF_Q, 0.1);
 
 figure()
 hold on
