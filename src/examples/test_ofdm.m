@@ -17,9 +17,14 @@ T = 1; % periodo do simbolo, em segundos
 % R = N/T;
 
 %% Parametros do FEC
-enable_FEC = true;
+enable_FEC = false;
 trellis = poly2trellis(3, [5 7]);
 parity_ratio = 2;
+
+%% Parametros do MLS
+enable_MLS = true;
+k = 8;
+sync_bits = 2^k-1;
 
 %% Vetor Tempo
 timestep = T/(N*fs);
@@ -27,6 +32,11 @@ timestep = T/(N*fs);
 frame_size = numSymbol;
 if enable_FEC
     frame_size = frame_size * parity_ratio;
+end
+if enable_MLS
+    frame_size = frame_size + sync_bits;
+    num_padding = zero_padding(frame_size, N);
+    frame_size = frame_size + num_padding;
 end
 
 tmax = frame_size*T/N;
@@ -48,11 +58,23 @@ else
     a_enc = a;
 end
 
+%% TX MLS
+if enable_MLS
+    sync_vec = double(mls(k, 1) > 0);
+    if num_padding > 0
+        a_sync = [sync_vec a_enc zeros(1, num_padding)]; % concatenate
+    else
+        a_sync = [sync_vec a_enc]; % concatenate
+    end
+else
+    a_sync = a_enc;
+end
+
 %% TX BPSK
-a_mod = (a_enc >= 0.5) - (a_enc < 0.5);
+a_mod = (a_sync >= 0.5) - (a_sync < 0.5);
 
 %% TX Serial para paralelo
-an = reshape(a_mod, [N length(a_enc)/N]);
+an = reshape(a_mod, [N length(a_mod)/N]);
 
 %% TX OFDM
 skn = ifft(an, N);
@@ -198,13 +220,47 @@ yn = fft( rkn, N );
 y = reshape(yn, [1 size(yn, 1)*size(yn, 2)]);
 
 %% RX Slicer
-z_enc = (y > 0);
+z_sync = (y > 0);
 
 figure()
-stem(z_enc)
+stem(z_sync)
 title('RX')
 xlabel('samples')
 ylabel('z')
+
+%% RX removing MLS
+if enable_MLS
+    sync_vec2 = double(mls(k, 1) > 0);
+    self_corr = xcorr(z_sync, sync_vec2);
+    figure()
+    plot(self_corr);
+    xlim([length(z_sync)-length(sync_vec) length(z_sync)+frame_size])
+    title('Cross correlation')
+    ylabel('R')
+    xlabel('sample')
+
+    max_peak_pos = max(self_corr);
+    if(length(max_peak_pos) ~= 1)
+        warning('max_peak_pos = ')
+        disp(max_peak_pos)
+    end
+    start_frame = find(self_corr(length(z_sync): end) == max_peak_pos) + sync_bits;
+    if(isempty(start_frame) || (length(start_frame) > 1))
+        warning('start_frame =')
+        disp(start_frame)
+
+        if isempty(start_frame)
+            start_frame = 1;
+        end
+        if (length(start_frame) > 1)
+            start_frame = start_frame(1);
+        end
+    end
+    end_frame = (start_frame-1) + (frame_size - sync_bits - num_padding);
+    z_enc = z_sync(start_frame : end_frame);
+else
+    z_enc = z_sync(1:frame_size);
+end
 
 %% RX FEC
 if enable_FEC
