@@ -17,7 +17,7 @@ T = 1; % periodo do simbolo, em segundos
 % R = N/T;
 
 %% Parametros do FEC
-enable_FEC = false;
+enable_FEC = true;
 trellis = poly2trellis(3, [5 7]);
 parity_ratio = 2;
 
@@ -35,10 +35,11 @@ if enable_FEC
 end
 if enable_MLS
     frame_size = frame_size + sync_bits;
-    num_padding = zero_padding(frame_size, N);
+end
+num_padding = zero_padding(frame_size, N);
+if num_padding > 0
     frame_size = frame_size + num_padding;
 end
-
 tmax = frame_size*T/N;
 t = 0:timestep:tmax-timestep;
 t_pt = -tmax/2:timestep:tmax/2-timestep;
@@ -61,11 +62,7 @@ end
 %% TX MLS
 if enable_MLS
     sync_vec = double(mls(k, 1) > 0);
-    if num_padding > 0
-        a_sync = [sync_vec a_enc zeros(1, num_padding)]; % concatenate
-    else
-        a_sync = [sync_vec a_enc]; % concatenate
-    end
+    a_sync = [sync_vec a_enc]; % concatenate
 else
     a_sync = a_enc;
 end
@@ -74,6 +71,11 @@ end
 a_mod = (a_sync >= 0.5) - (a_sync < 0.5);
 
 %% TX Serial para paralelo
+
+if num_padding > 0
+    a_mod = [a_mod zeros(1, num_padding)];
+end
+
 an = reshape(a_mod, [N length(a_mod)/N]);
 
 %% TX OFDM
@@ -181,7 +183,7 @@ xlabel('time')
 ylabel('RRF')
 
 %% RX LP
-[num, den] = butter(10, fc*2*timestep);
+[num, den] = butter(10, fc*2*timestep, 'low');
 LP_I = filtfilt(num, den, RRF_I) * 2;
 LP_Q = filtfilt(num, den, RRF_Q) * 2;
 
