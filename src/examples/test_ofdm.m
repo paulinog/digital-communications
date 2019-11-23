@@ -2,7 +2,7 @@ close all;
 clc; clearvars; 
 disp('OFDM example')
 %% User parameters
-numSymbol = 16; % TODO: verificar se numSymbol for multiplo de 8
+numSymbol = 80; % TODO: verificar se numSymbol for multiplo de 8
 
 N = 8; % N-point FFT
 
@@ -100,19 +100,19 @@ ylabel('SRF')
 
 %% Channel 
 % noiseless
-r = st;
+r = SRF;
 
 % real valued noise
 % N0 = 0.8*max(st);
 % n = N0*rand(1, length(t));
-% r = st + n;
+% r = SRF + n;
 
 % complex noise
 % snr = -40; %dB
 % snr = 0;
-% powerDB = 10*log10(var(st));
+% powerDB = 10*log10(var(SRF));
 % noiseVar = 10.^(0.1*(powerDB-snr)); 
-% r = awgn(st, snr);
+% r = awgn(SRF, snr);
 
 figure()
 subplot(211)
@@ -125,8 +125,8 @@ xlabel('time')
 ylabel('\angle{r + n}')
 
 %% RX RF
-RRF_I = SRF .*cos(2*pi*fc*t);
-RRF_Q = SRF .* -sin(2*pi*fc*t);
+RRF_I = r .*cos(2*pi*fc*t);
+RRF_Q = r .* -sin(2*pi*fc*t);
 
 figure()
 hold on
@@ -149,11 +149,8 @@ legend('real','imag')
 xlabel('time')
 ylabel('LP')
 
-%% RX OFDM
-tic
-rt = conv(r, p(t_pt), 'same');
-disp('Time to compute convolution:')
-toc
+%% RX Complex signal
+rt = LP_I + 1j*LP_Q;
 
 figure()
 subplot(211)
@@ -165,6 +162,23 @@ plot(t,angle(rt))
 xlabel('time')
 ylabel('\angle{r(t)}')
 
+%% RX OFDM (conv)
+% tic
+% rt = conv(r, p(t_pt), 'same');
+% disp('Time to compute convolution:')
+% toc
+% 
+% figure()
+% subplot(211)
+% plot(t,abs(rt))
+% xlabel('time')
+% ylabel('|r(t)|')
+% subplot(212)
+% plot(t,angle(rt))
+% xlabel('time')
+% ylabel('\angle{r(t)}')
+
+%% RX OFDM
 % rk_up = rt(t = kT);
 rk = downsample(rt, fs);
 
@@ -177,7 +191,7 @@ yn = fft( rkn, N );
 % paralelo para serial
 y = reshape(yn, [1 size(yn, 1)*size(yn, 2)]);
 
-% slicer
+%% RX Slicer
 z = (y >= 0) - (y < 0);
 
 figure()
