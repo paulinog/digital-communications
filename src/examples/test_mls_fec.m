@@ -8,19 +8,19 @@ fc1 = 4*fc0;
 fs = 4*fc1;
 
 %% FEC Parameters
-enable_FEC = true;
+enable_FEC = false;
 
 trellis = poly2trellis(3, [5 7]);
 parity_ratio = 2;
 
 %% MLS Parameters
-enable_MLS = false;
+enable_MLS = true;
 k = 8;
 sync_bits = 2^k-1;
 
 %% TEST channel delays
-% ch_delay1 = 100*round(numSymbol*rand(1)); % random spacing
-% ch_delay2 = 100*round(numSymbol*rand(1));
+ch_delay1 = 100*round(numSymbol*rand(1)); % random spacing
+ch_delay2 = 100*round(numSymbol*rand(1));
 
 %% Time vector
 timestep = 1/fs;
@@ -31,7 +31,7 @@ if enable_FEC
     frame_size = frame_size * parity_ratio;
 end
 if enable_MLS
-    frame_size = frame_size + sync_bits;
+    frame_size = frame_size + sync_bits*2;
 end
 
 % MLS + FEC + Channel delays
@@ -56,7 +56,7 @@ end
 %% TX MLS
 if enable_MLS
     sync_vec = double(mls(k, 1) > 0);
-    a_sync = [sync_vec a_enc]; % concatenate
+    a_sync = [sync_vec a_enc sync_vec]; % concatenate
 else
     a_sync = a_enc;
 end
@@ -76,12 +76,12 @@ end
 s = a_sync;
 
 %% Channel 
-r = s;
+% r = s;
 % r = [zeros(1, ch_delay1) s ];
-% r = [zeros(1, ch_delay1) s zeros(1, ch_delay2)];
+r = [zeros(1, ch_delay1) s zeros(1, ch_delay2)];
 
 len_r = length(r);
-% frame_size_rx = len_r/(fs*T);
+frame_size_rx = len_r/(fs*T);
 tmax_rx = len_r/fs;
 t_rx = 0 : timestep : tmax_rx - timestep;
 
@@ -134,33 +134,43 @@ if enable_MLS
     figure()
     % plot(self_corr(length(y_sync): length(y_sync) + frame_size));
     plot(self_corr);
-    xlim([length(y_sync)-length(sync_vec) length(y_sync)+frame_size])
+%     xlim([length(y_sync)-length(sync_vec) length(y_sync)+frame_size])
     title('Cross correlation')
     ylabel('R')
     xlabel('sample')
-
-    max_peak_pos = max(self_corr);
-    if(length(max_peak_pos) ~= 1)
-        warning('max_peak_pos = ')
-        disp(max_peak_pos)
-    end
-    start_frame = find(self_corr(length(y_sync): end) == max_peak_pos) + sync_bits;
-    if(isempty(start_frame) || (length(start_frame) > 1))
+    
+    [pks, loc] = findpeaks(abs(self_corr),'NPeaks',2,'SortStr','descend');
+    if(isempty(loc) || (length(loc) < 2))
         warning('start_frame =')
-        disp(start_frame)
+        disp(pks)
+        disp(loc)
 
-        if isempty(start_frame)
+        if isempty(loc)
             start_frame = 1;
+            end_frame = 0;
         end
-        if (length(start_frame) > 1)
-            start_frame = start_frame(1);
+        if (length(loc) == 1)
+            start_frame = loc(1) - length(y_sync) + sync_bits + 1;
+            end_frame = 0;
         end
+    else
+        start_frame = loc(1) - length(y_sync) + sync_bits + 1;
+        end_frame = loc(2) - length(y_sync);
     end
-    end_frame = (start_frame-1) + (frame_size - sync_bits);
-    y_enc = y_sync(start_frame : end_frame);
+    
+    if end_frame > 0
+        y_enc = y_sync(start_frame : end_frame);
+    else
+        y_enc = y_sync(start_frame : end);
+    end
 else
     y_enc = y_sync(1:frame_size);
 end
+
+% start_frame = ch_delay1 + sync_bits + 1;
+% end_frame = start_frame + 19;
+% y_enc = y_sync(start_frame : end_frame);
+
 %% Decode FEC
 if enable_FEC
     y = vitdec(y_enc, trellis, 20,  'trunc', 'hard');
