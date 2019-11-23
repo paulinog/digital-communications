@@ -87,13 +87,7 @@ legend('real','imag')
 xlabel('time')
 ylabel('s(t)')
 
-%%
-figure;
-pspectrum(real(st));
-
 %% RF
-% SRF = st.*exp(1j*2*pi*fc*t);
-
 SRF = real(st).*cos(2*pi*fc*t) - imag(st).*sin(2*pi*fc*t);
 
 figure()
@@ -104,48 +98,9 @@ legend('real','imag')
 xlabel('time')
 ylabel('SRF')
 
-%%
-figure()
-pspectrum(real(SRF));
-
-%%
-RRF_I = SRF .*cos(2*pi*fc*t);
-RRF_Q = SRF .* -sin(2*pi*fc*t);
-
-figure()
-hold on
-plot(t, RRF_I)
-plot(t, RRF_Q)
-legend('real','imag')
-xlabel('time')
-ylabel('RRF')
-
-%%
-% LP_I = lowpass(RRF_I, fc, fs);
-% LP_Q = lowpass(RRF_Q, fc/2, fs);
-
-[num, den] = butter(10, fc*2*timestep);
-LP_I = amdemod(SRF, fc, 1/timestep, 0, 0, num, den);
-% LP_Q = amdemod(RRF_Q, fc, fs, 0, 0, num, den);
-
-figure()
-hold on
-plot(t, LP_I)
-% plot(t, LP_Q)
-% legend('real','imag')
-xlabel('time')
-ylabel('LP')
-
-%%
-% s(t) = a + jb = |s| * e^j<s = |s| * (cos(<s) + jsin(<s))
-% s(t)*e^jx = (Re(s)*cos(x) - Im(s)*sin(x))
-%             + j (Re(s)*sin(x) + Im(s)*cos(x))
-%
-% txbp = real(SRF)*cos(2*pi*fc*t) - imag(SRF)*sin(2*pi*fc*t);
-
 %% Channel 
 % noiseless
-% r = st;
+r = st;
 
 % real valued noise
 % N0 = 0.8*max(st);
@@ -154,10 +109,10 @@ ylabel('LP')
 
 % complex noise
 % snr = -40; %dB
-snr = 0;
-powerDB = 10*log10(var(st));
-noiseVar = 10.^(0.1*(powerDB-snr)); 
-r = awgn(st, snr);
+% snr = 0;
+% powerDB = 10*log10(var(st));
+% noiseVar = 10.^(0.1*(powerDB-snr)); 
+% r = awgn(st, snr);
 
 figure()
 subplot(211)
@@ -169,10 +124,32 @@ plot(t,angle(r))
 xlabel('time')
 ylabel('\angle{r + n}')
 
+%% RX RF
+RRF_I = SRF .*cos(2*pi*fc*t);
+RRF_Q = SRF .* -sin(2*pi*fc*t);
+
+figure()
+hold on
+plot(t, RRF_I)
+plot(t, RRF_Q)
+legend('real','imag')
+xlabel('time')
+ylabel('RRF')
+
+%% RX LP
+[num, den] = butter(10, fc*2*timestep);
+LP_I = filtfilt(num, den, RRF_I) * 2;
+LP_Q = filtfilt(num, den, RRF_Q) * 2;
+
+figure()
+hold on
+plot(t, LP_I)
+plot(t, LP_Q)
+legend('real','imag')
+xlabel('time')
+ylabel('LP')
 
 %% RX OFDM
-% rxbb=hilbert(SRF).*exp(-j2pift)
-
 tic
 rt = conv(r, p(t_pt), 'same');
 disp('Time to compute convolution:')
