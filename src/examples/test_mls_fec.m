@@ -1,6 +1,6 @@
 close all;
 clc; clearvars; 
-disp('OFDM example')
+disp('MLS/FEC example')
 %% User parameters
 numSymbol = 20;
 fc0 = 440;
@@ -8,7 +8,7 @@ fc1 = 4*fc0;
 fs = 4*fc1;
 
 %% FEC Parameters
-enable_FEC = false;
+enable_FEC = true;
 
 trellis = poly2trellis(3, [5 7]);
 parity_ratio = 2;
