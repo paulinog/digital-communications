@@ -25,7 +25,7 @@ parity_ratio = 2;
 
 %% Parametros do MLS
 enable_MLS = true;
-k = 5;
+k = 4;
 sync_bits = 2^k-1;
 
 %% TX Vetor tempo
@@ -95,6 +95,7 @@ sk = reshape(skn, [1 size(skn, 1)*size(skn, 2)]);
 %% TX MLS
 if enable_MLS
     sync_vec = double((mls(k, 1) > 0.5) - (mls(k, 1) <= 0.5));
+    sync_vec = sync_vec + 1j*sync_vec;
     sk_sync = [sync_vec sk sync_vec]; % concatenate
     
     num_padding_tx_mls = zero_padding(length(sk_sync), N);
@@ -264,30 +265,37 @@ if enable_MLS
     sync_vec2 = double((mls(k, 1) > 0.5) - (mls(k, 1) <= 0.5));
     self_corr = xcorr(rk, sync_vec2);
     
-    max_peak_pos = 0.8*max(real(self_corr));
-    start_frame = min(find(self_corr(length(rk): end) >= max_peak_pos)) + sync_bits;
-
-%     end_frame = (start_frame-1) + (frame_size - sync_bits - num_padding);
-    end_frame = max(find(self_corr(length(rk): end) >= max_peak_pos)) - 1;
+    [pks, loc] = findpeaks(abs(self_corr), 'NPeaks', 2,'SortStr','descend');
+    start_frame = loc(1) + sync_bits + 1 - length(rk);
+    end_frame = loc(2) - length(rk);
     frame_size = end_frame - start_frame + 1;
     
     if 1%enable_plot
         figure()
+        hold on
+        plot(abs(self_corr));
         plot(real(self_corr));
+        plot(imag(self_corr));
         %xlim([length(rk)-length(sync_vec) length(rk)+frame_size])
         title('Cross correlation')
         ylabel('R')
         xlabel('sample')
+        legend('|R|','Re(R)','Im(R)')
+        hold off
     end
 else
     start_frame = 1;
     end_frame = length(rk);
+    frame_size = end_frame - start_frame + 1;
 end
 rk_enc = rk(start_frame : end_frame);
 
-start_frame
-end_frame
-frame_size
+disp('R_start =')
+disp(start_frame)
+disp('R_end =')
+disp(end_frame)
+disp('frame size =')
+disp(frame_size)
 
 %% RX Serial para paralelo
 num_padding_rx_mls = zero_padding(length(rk_enc), N);
