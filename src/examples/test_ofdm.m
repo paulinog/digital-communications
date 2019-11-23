@@ -95,7 +95,10 @@ sk = reshape(skn, [1 size(skn, 1)*size(skn, 2)]);
 %% TX MLS
 if enable_MLS
     sync_vec = double((mls(k, 1) > 0.5) - (mls(k, 1) <= 0.5));
-    sync_vec = sync_vec + 1j*sync_vec;
+    
+    sync_vec = sync_vec;
+    %sync_vec = sync_vec + 1j*sync_vec;
+    
     sk_sync = [sync_vec sk sync_vec]; % concatenate
     
     num_padding_tx_mls = zero_padding(length(sk_sync), N);
@@ -265,9 +268,9 @@ if enable_MLS
     sync_vec2 = double((mls(k, 1) > 0.5) - (mls(k, 1) <= 0.5));
     self_corr = xcorr(rk, sync_vec2);
     
-    [pks, loc] = findpeaks(abs(self_corr), 'NPeaks', 2,'SortStr','descend');
-    start_frame = loc(1) + sync_bits + 1 - length(rk);
-    end_frame = loc(2) - length(rk);
+    [pks, loc] = findpeaks(abs(self_corr), 'NPeaks', 2,'SortStr','descend')
+    start_frame = min(loc) + sync_bits + 1 - length(rk);
+    end_frame = max(loc) - length(rk);
     frame_size = end_frame - start_frame + 1;
     
     if 1%enable_plot
