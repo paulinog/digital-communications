@@ -2,7 +2,7 @@ close all;
 clc; clearvars; 
 disp('OFDM example')
 %% User parameters
-numSymbol = 32; % TODO: verificar se numSymbol for multiplo de 8
+numSymbol = 80; % TODO: verificar se numSymbol for multiplo de 8
 
 N = 8; % N-point FFT
 
@@ -64,7 +64,7 @@ else
 end
 
 %% TX MLS
-if 0% enable_MLS
+if 0%enable_MLS
     sync_vec = double(mls(k, 1) > 0);
 %     a_sync = [sync_vec a_enc]; % concatenate
     a_sync = [sync_vec a_enc sync_vec]; % concatenate
@@ -101,8 +101,8 @@ ylabel('\angle{s_k}')
 sk = reshape(skn, [1 size(skn, 1)*size(skn, 2)]);
 
 % Add by Marcos
-if  enable_MLS
-    sync_vec = double(mls(k, 1) > 0);
+if enable_MLS
+    sync_vec = double((mls(k, 1) > 0.5) - (mls(k, 1) <= 0.5));
 %     a_sync = [sync_vec a_enc]; % concatenate
     sk_sync = [sync_vec sk sync_vec]; % concatenate
 else
@@ -113,9 +113,10 @@ end
 % sk_up = upsample(sk, fs);
 sk_up = upsample(sk_sync, fs); %Add by Marcos
 
+t_tx = 0:timestep:(length(sk_up)-1)*timestep;
 
 figure()
-plot(t, abs(sk_up))
+plot(t_tx, abs(sk_up))
 title('S_k upsampled')
 xlabel('time (in seconds)')
 
@@ -133,30 +134,30 @@ st = conv (sk_up, pt, 'same');
 
 figure()
 subplot(211)
-plot(t,abs(st))
+plot(t_tx,abs(st))
 xlabel('time')
 ylabel('|s(t)|')
 subplot(212)
-plot(t,angle(st))
+plot(t_tx,angle(st))
 xlabel('time')
 ylabel('\angle{s(t)}')
 
 %% TX sinal complexo
 figure()
 hold on
-plot(t, real(st))
-plot(t, imag(st))
+plot(t_tx, real(st))
+plot(t_tx, imag(st))
 legend('real','imag')
 xlabel('time')
 ylabel('s(t)')
 
 %% TX Pass Band
-SRF = real(st).*cos(2*pi*fc*t) - imag(st).*sin(2*pi*fc*t);
+SRF = real(st).*cos(2*pi*fc*t_tx) - imag(st).*sin(2*pi*fc*t_tx);
 
 figure()
 hold on
-plot(t, real(SRF))
-plot(t, imag(SRF))
+plot(t_tx, real(SRF))
+plot(t_tx, imag(SRF))
 legend('real','imag')
 xlabel('time')
 ylabel('SRF')
@@ -245,8 +246,39 @@ if num_padding > 0
     rk = [rk zeros(1, num_padding)];
 end
 
+%% MLS Removal - Marcos
+if enable_MLS
+    sync_vec2 = double((mls(k, 1) > 0.5) - (mls(k, 1) <= 0.5));
+    self_corr = xcorr(rk, sync_vec2);
+
+    max_peak_pos = 0.95*max(real(self_corr));
+    start_frame = min(find(self_corr(length(rk): end) >= max_peak_pos)) + sync_bits;
+
+%     end_frame = (start_frame-1) + (frame_size - sync_bits - num_padding);
+    end_frame = max(find(self_corr(length(rk): end) >= max_peak_pos)) - 1;
+    frame_size = end_frame - start_frame + 1;
+    
+    figure()
+    plot(real(self_corr));
+    xlim([length(rk)-length(sync_vec) length(rk)+frame_size])
+    title('Cross correlation')
+    ylabel('R')
+    xlabel('sample')
+    
+else
+    start_frame = 1;
+    end_frame = length(rk);
+end
+
+rk_enc = rk(start_frame : end_frame);
+
+start_frame
+end_frame
+frame_size
+
+%%
 % serial para paralelo
-rkn = reshape(rk, [N length(rk)/N]);
+rkn = reshape(rk_enc, [N length(rk_enc)/N]);
 
 % y_p = sign(real(fft( rkn, N )));
 yn = fft( rkn, N );
@@ -264,7 +296,7 @@ xlabel('samples')
 ylabel('z')
 
 %% RX removing MLS
-if enable_MLS
+if 0%enable_MLS
     sync_vec2 = double(mls(k, 1) > 0);
     self_corr = xcorr(z_sync, sync_vec2);
     figure()
