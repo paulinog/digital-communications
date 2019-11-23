@@ -38,9 +38,9 @@ end
 if enable_MLS
     frame_size = frame_size + 2*sync_bits;
 end
-num_padding = zero_padding(frame_size, N);
-if num_padding > 0
-    frame_size = frame_size + num_padding;
+num_padding_t = zero_padding(frame_size, N);
+if num_padding_t > 0
+    frame_size = frame_size + num_padding_t;
 end
 tmax = frame_size*T/N;
 t = 0:timestep:tmax-timestep;
@@ -67,9 +67,9 @@ end
 a_mod = (a_enc >= 0.5) - (a_enc < 0.5);
 
 %% TX Serial para paralelo
-num_padding = zero_padding(length(a_mod), N);
-if num_padding > 0
-    a_mod = [a_mod zeros(1, num_padding)];
+num_padding_mod = zero_padding(length(a_mod), N);
+if num_padding_mod > 0
+    a_mod = [a_mod zeros(1, num_padding_mod)];
 end
 an = reshape(a_mod, [N length(a_mod)/N]);
 
@@ -97,7 +97,10 @@ if enable_MLS
     sync_vec = double((mls(k, 1) > 0.5) - (mls(k, 1) <= 0.5));
     sk_sync = [sync_vec sk sync_vec]; % concatenate
     
-    %TODO: zero padding ???
+    num_padding_tx_mls = zero_padding(length(sk_sync), N);
+    if num_padding_tx_mls > 0
+        sk_sync = [sk_sync zeros(1, num_padding_tx_mls)];
+    end
 else
     sk_sync = sk;
 end
@@ -186,10 +189,10 @@ r = SRF;
 % r = awgn(SRF, snr);
 
 % TEST channel delays
-% ch_delay1 = 100*round(100*numSymbol*rand(1)); % random spacing
+ch_delay1 = 8*round(100*numSymbol*rand(1)); % random spacing
 % ch_delay2 = 100*round(100*numSymbol*rand(1));
-% r = [zeros(1, ch_delay1) SRF];
-% r = [zeros(1, ch_delay1) SRF zeros(1, ch_delay2)];
+r = [zeros(1, ch_delay1) r];
+% r = [zeros(1, ch_delay1) r zeros(1, ch_delay2)];
 
 %% RX Vetor tempo
 len_r = length(r);
@@ -268,7 +271,7 @@ if enable_MLS
     end_frame = max(find(self_corr(length(rk): end) >= max_peak_pos)) - 1;
     frame_size = end_frame - start_frame + 1;
     
-    if enable_plot
+    if 1%enable_plot
         figure()
         plot(real(self_corr));
         %xlim([length(rk)-length(sync_vec) length(rk)+frame_size])
@@ -282,14 +285,14 @@ else
 end
 rk_enc = rk(start_frame : end_frame);
 
-% start_frame
-% end_frame
-% frame_size
+start_frame
+end_frame
+frame_size
 
 %% RX Serial para paralelo
-num_padding = zero_padding(length(rk_enc), N);
-if num_padding > 0
-    rk_enc = [rk_enc zeros(1, num_padding)];
+num_padding_rx_mls = zero_padding(length(rk_enc), N);
+if num_padding_rx_mls > 0
+    rk_enc = [rk_enc zeros(1, num_padding_rx_mls)];
 end
 rkn = reshape(rk_enc, [N length(rk_enc)/N]);
 
