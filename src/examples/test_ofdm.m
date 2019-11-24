@@ -189,7 +189,7 @@ r = SRF;
 % r = awgn(SRF, snr);
 
 % TEST channel delays
-ch_delay1 = 8*round(100*numSymbol*rand(1)); % random spacing
+ch_delay1 = 10*round(100*numSymbol*rand(1)); % random spacing
 % ch_delay2 = 100*round(100*numSymbol*rand(1));
 r = [zeros(1, ch_delay1) r];
 % r = [zeros(1, ch_delay1) r zeros(1, ch_delay2)];
@@ -213,14 +213,15 @@ end
 %% RX RF
 if enable_MLS
     tic
-    phaseRF = phase_compensation(r, fc, fs, timestep, k);
+    [phaseRF, sample_shift] = phase_compensation(r, fc, fs, timestep, k);
     disp('Time to compute phase compensation:')
     toc
+    t_rx = t_rx(sample_shift:end);
 else
     phaseRF = 0;
 end
-RRF_I = r .*cos(2*pi*fc*t_rx + phaseRF);
-RRF_Q = r .* -sin(2*pi*fc*t_rx + phaseRF);
+RRF_I = r(sample_shift:end) .*cos(2*pi*fc*t_rx + phaseRF);
+RRF_Q = r(sample_shift:end) .* -sin(2*pi*fc*t_rx + phaseRF);
 
 if enable_plot
     figure()
