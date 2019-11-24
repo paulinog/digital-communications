@@ -95,10 +95,6 @@ sk = reshape(skn, [1 size(skn, 1)*size(skn, 2)]);
 %% TX MLS
 if enable_MLS
     sync_vec = double((mls(k, 1) > 0.5) - (mls(k, 1) <= 0.5));
-    
-    sync_vec = sync_vec;
-    %sync_vec = sync_vec + 1j*sync_vec;
-    
     sk_sync = [sync_vec sk sync_vec]; % concatenate
     
     num_padding_tx_mls = zero_padding(length(sk_sync), N);
@@ -215,7 +211,14 @@ if enable_plot
 end 
 
 %% RX RF
-phaseRF = 0;
+if enable_MLS
+    tic
+    phaseRF = phase_compensation(r, fc, fs, timestep, k);
+    disp('Time to compute phase compensation:')
+    toc
+else
+    phaseRF = 0;
+end
 RRF_I = r .*cos(2*pi*fc*t_rx + phaseRF);
 RRF_Q = r .* -sin(2*pi*fc*t_rx + phaseRF);
 
@@ -268,7 +271,7 @@ if enable_MLS
     sync_vec2 = double((mls(k, 1) > 0.5) - (mls(k, 1) <= 0.5));
     self_corr = xcorr(rk, sync_vec2);
     
-    [pks, loc] = findpeaks(abs(self_corr), 'NPeaks', 2,'SortStr','descend')
+    [pks, loc] = findpeaks(abs(self_corr), 'NPeaks', 2,'SortStr','descend');
     start_frame = min(loc) + sync_bits + 1 - length(rk);
     end_frame = max(loc) - length(rk);
     frame_size = end_frame - start_frame + 1;
@@ -293,12 +296,12 @@ else
 end
 rk_enc = rk(start_frame : end_frame);
 
-disp('R_start =')
-disp(start_frame)
-disp('R_end =')
-disp(end_frame)
-disp('frame size =')
-disp(frame_size)
+% disp('R_start =')
+% disp(start_frame)
+% disp('R_end =')
+% disp(end_frame)
+% disp('frame size =')
+% disp(frame_size)
 
 %% RX Serial para paralelo
 num_padding_rx_mls = zero_padding(length(rk_enc), N);
