@@ -86,12 +86,12 @@ t_sh = t_opt(max_shift:end);
 
 %% course loop
 center_phi = 0;
-phi_step = pi/8;
+phi_step = pi/4;
 max_peak = 0;
 for phi_course = -pi : phi_step : pi
     RRF = x(max_shift:end_x) .*cos(2*pi*fc*t_sh + phi_course);
     LP = filtfilt(num, den, RRF) * 2;
-    y = downsample(LP, fs);
+    y = downsample(LP, double(fs));
     self_corr = xcorr(y, sync_vec);
     pks_course = findpeaks(real(self_corr), 'NPeaks', 1,'SortStr','descend');
     if max(pks_course) > max_peak

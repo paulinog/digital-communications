@@ -2,7 +2,7 @@ close all;
 clc; clearvars; 
 disp('OFDM example')
 %% User parameters
-numSymbol = 32; % TODO: verificar se numSymbol for multiplo de 8
+numSymbol = 80; % TODO: verificar se numSymbol for multiplo de 8
 
 N = 8; % N-point FFT
 
@@ -178,25 +178,23 @@ end
 if audio_recover
     numBits = 8;
     numChannels = 1;
+    frameSample = 4*8192;
 
-    audio_rx = audiorecorder(2*fs, numBits, numChannels);
-%     audio_rx = audiorecorder(2/timestep, numBits, numChannels);
+    audio_rx = audiorecorder(frameSample, numBits, numChannels);
 
 %     input('Press ENTER to continue')
-    
 %     disp('starting of record')
     record(audio_rx);
 
     pause(1);
-    sound(SRF/64, 2*fs, numBits)
+    sound(SRF/64, frameSample, numBits)
     
 %     input('Press ENTER to continue')
-    
-    pause(65);
+    pause(length(sk_sync)/3);
 %     disp('endding record')
     stop(audio_rx)
 
-    r_temp = 9*getaudiodata(audio_rx);
+    r_temp = 9*getaudiodata(audio_rx)';
 
     figure()
     plot(SRF);
@@ -270,8 +268,8 @@ end
 
 %% RX LP
 [num, den] = butter(10, fc*2*timestep, 'low');
-LP_I = filtfilt(num, den, RRF_I) * 2;
-LP_Q = filtfilt(num, den, RRF_Q) * 2;
+LP_I = filtfilt(num, den, double(RRF_I)) * 2;
+LP_Q = filtfilt(num, den, double(RRF_Q)) * 2;
 
 if enable_plot
     figure()
