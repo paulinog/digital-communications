@@ -20,13 +20,14 @@ t = 0:timestep:(len_x-1)*timestep;
 % start_y = min(abs_loc) + sync_bits + 1 - length(y)
 t_opt = t;
 
-%% initial sample shift
+%% course shift
+% initial sample shift
 max_shift = 1;
-points = 10;
+points_course = 10;
 max_peak = 0;
-for sample_shift = ceil(1:fs/points:fs)
-    RRF_I = x(sample_shift:end) .*cos(2*pi*fc*t(sample_shift:end));
-    RRF_Q = x(sample_shift:end) .* -sin(2*pi*fc*t(sample_shift:end));
+for shift_course = ceil(1 : fs/points_course : fs)
+    RRF_I = x(shift_course:end) .*cos(2*pi*fc*t(shift_course:end));
+    RRF_Q = x(shift_course:end) .* -sin(2*pi*fc*t(shift_course:end));
     LP_I = filtfilt(num, den, RRF_I) * 2;
     LP_Q = filtfilt(num, den, RRF_Q) * 2;
     LP = LP_I + 1j*LP_Q;
@@ -35,7 +36,33 @@ for sample_shift = ceil(1:fs/points:fs)
     abs_pks = findpeaks(abs(self_corr), 'NPeaks', 2,'SortStr','descend');
     if max(abs_pks) > max_peak
         max_peak = max(abs_pks);
-        max_shift = sample_shift;
+        max_shift = shift_course;
+    else
+        break;
+    end
+end
+%% fine shift
+points_fine = 10;
+range_fine = fs/points_course;
+step_fine = range_fine/(points_fine/2);
+end_fine = max_shift + range_fine;
+if max_shift > 1
+    init_fine = max_shift - range_fine;
+else
+    init_fine = 1;
+end
+for shift_fine = ceil(init_fine:step_fine:end_fine)
+    RRF_I = x(shift_fine:end) .*cos(2*pi*fc*t(shift_fine:end));
+    RRF_Q = x(shift_fine:end) .* -sin(2*pi*fc*t(shift_fine:end));
+    LP_I = filtfilt(num, den, RRF_I) * 2;
+    LP_Q = filtfilt(num, den, RRF_Q) * 2;
+    LP = LP_I + 1j*LP_Q;
+    y = downsample(LP, fs);
+    self_corr = xcorr(y, sync_vec);
+    abs_pks = findpeaks(abs(self_corr), 'NPeaks', 2,'SortStr','descend');
+    if max(abs_pks) > max_peak
+        max_peak = max(abs_pks);
+        max_shift = shift_fine;
     else
         break;
     end
