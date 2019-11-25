@@ -189,8 +189,8 @@ r = SRF;
 % r = awgn(SRF, snr);
 
 % TEST channel delays
-ch_delay1 = 10*round(100*numSymbol*rand(1)); % random spacing
-% ch_delay2 = 100*round(100*numSymbol*rand(1));
+ch_delay1 = round(100*numSymbol*rand(1)); % random spacing
+% ch_delay2 = round(100*numSymbol*rand(1));
 r = [zeros(1, ch_delay1) r];
 % r = [zeros(1, ch_delay1) r zeros(1, ch_delay2)];
 

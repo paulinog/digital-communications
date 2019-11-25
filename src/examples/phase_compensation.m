@@ -37,8 +37,6 @@ for shift_course = ceil(1 : fs/points_course : fs)
     if max(abs_pks) > max_peak
         max_peak = max(abs_pks);
         max_shift = shift_course;
-    else
-        break;
     end
 end
 %% fine shift
@@ -67,8 +65,9 @@ for shift_fine = ceil(init_fine:step_fine:end_fine)
         break;
     end
 end
-disp('sample_shift = ')
+disp('sample shift = ')
 disp(max_shift)
+t_sh = t_opt(max_shift:end);
 % plot self corr, after time shift
 % RRF_I = x(max_shift:end) .*cos(2*pi*fc*t(max_shift:end));
 % RRF_Q = x(max_shift:end) .* -sin(2*pi*fc*t(max_shift:end));
@@ -88,7 +87,7 @@ center_phi = 0;
 phi_step = pi/8;
 max_peak = 0;
 for phi_course = -pi : phi_step : pi
-    RRF = x(max_shift:end) .*cos(2*pi*fc*t_opt(max_shift:end) + phi_course);
+    RRF = x(max_shift:end) .*cos(2*pi*fc*t_sh + phi_course);
     LP = filtfilt(num, den, RRF) * 2;
     y = downsample(LP, fs);
     self_corr = xcorr(y, sync_vec);
@@ -121,7 +120,7 @@ end
 phi_offset = center_phi;
 points = 10;
 for phi_fine = center_phi-phi_step : 2*phi_step/points : center_phi+phi_step
-    RRF = x(max_shift:end) .*cos(2*pi*fc*t_opt(max_shift:end) + phi_fine);
+    RRF = x(max_shift:end) .*cos(2*pi*fc*t_sh + phi_fine);
     LP = filtfilt(num, den, RRF) * 2;
     y = downsample(LP, fs);
     self_corr = xcorr(y, sync_vec);
@@ -131,8 +130,9 @@ for phi_fine = center_phi-phi_step : 2*phi_step/points : center_phi+phi_step
         phi_offset = phi_fine;
     end
 end
+disp('phase offset (degrees) = ')
+disp(phi_offset*360/(2*pi))
 
 sample_shift = max_shift;
 phase_offset = phi_offset;
 end
-
