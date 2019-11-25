@@ -182,17 +182,17 @@ r = SRF;
 % r = SRF + n;
 
 % complex noise
-% snr = -40; %dB
-% snr = 0;
-% powerDB = 10*log10(var(SRF));
-% noiseVar = 10.^(0.1*(powerDB-snr)); 
-% r = awgn(SRF, snr);
+snr = -40; %dB
+snr = 0;
+powerDB = 10*log10(var(SRF));
+noiseVar = 10.^(0.1*(powerDB-snr)); 
+r = awgn(SRF, snr);
 
 % TEST channel delays
 ch_delay1 = round(100*numSymbol*rand(1)); % random spacing
-% ch_delay2 = round(100*numSymbol*rand(1));
-r = [zeros(1, ch_delay1) r];
-% r = [zeros(1, ch_delay1) r zeros(1, ch_delay2)];
+ch_delay2 = round(100*numSymbol*rand(1));
+% r = [zeros(1, ch_delay1) r];
+r = [zeros(1, ch_delay1) r zeros(1, ch_delay2)];
 
 %% RX Vetor tempo
 len_r = length(r);
@@ -277,13 +277,12 @@ if enable_MLS
     end_frame = max(loc) - length(rk);
     frame_size = end_frame - start_frame + 1;
     
-    if 1%enable_plot
+    if enable_plot
         figure()
         hold on
         plot(abs(self_corr));
         plot(real(self_corr));
         plot(imag(self_corr));
-        %xlim([length(rk)-length(sync_vec) length(rk)+frame_size])
         title('Cross correlation')
         ylabel('R')
         xlabel('sample')
@@ -339,8 +338,15 @@ end
 %% RX BER
 if length(z) >= length(a)
     err = sum(a ~= z(1:length(a)));
-    if (err >0 )
-        error(['Total of errors: ' num2str(err) ' (' ...
+    if (err > 0)
+       if (err < 10)
+           loc_err = find(a ~= z(1:length(a)));
+           disp(['Position: ' num2str(loc_err)])
+           disp(['Expected: ' num2str(a(loc_err))])
+           disp(['Received: ' num2str(z(loc_err))])
+       end
+       
+       error(['Total of errors: ' num2str(err) ' (' ...
                num2str(100*err/frame_size) '%)']);
     else
         disp('no errors');
