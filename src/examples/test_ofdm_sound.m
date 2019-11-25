@@ -18,7 +18,6 @@ T = 1; % periodo do simbolo, em segundos
 % R = N/T;
 
 enable_plot = false;
-audio_recover = true;
 
 %% Parametros do FEC
 enable_FEC = true;
@@ -175,25 +174,45 @@ if enable_plot
 end
 
 %% Audio Recorder
+audio_recover = true;
+audio_loopback = false;
+audio_file = true;
+
 if audio_recover
     numBits = 8;
     numChannels = 1;
-    frameSample = 4*8192;
-
-    audio_rx = audiorecorder(frameSample, numBits, numChannels);
-
-%     input('Press ENTER to continue')
-%     disp('starting of record')
-    record(audio_rx);
-
-    pause(1);
-    sound(SRF/64, frameSample, numBits)
+    frameSample = 16*8192;
     
-%     input('Press ENTER to continue')
-    pause(length(sk_sync)/3);
-%     disp('endding record')
-    stop(audio_rx)
+    if audio_loopback
+        input('Press ENTER to start the record')
+%         audio_rx = audiorecorder(frameSample, numBits, numChannels);
+        audio_rx = audiorecorder(1/timestep, numBits, numChannels);
+        disp('starting the record')
+        record(audio_rx);
+    end
+    
+    if audio_file
+        input('Press ENTER to create the file')
+%         audiowrite('audio_file.wav',SRF/16,frameSample)
+        audiowrite('audio_file.wav',SRF/16,1/timestep)
+    else
+        input('Press ENTER to start the sound')
+        sound(SRF/16, frameSample, numBits)
+%         sound(SRF/8, 1/timestep, numBits)
+    end
+    
+    if ~audio_loopback
+        input('Press ENTER to start the record')
+        audio_rx = audiorecorder(frameSample, numBits, numChannels);
+        disp('starting the record')
+        record(audio_rx);
+    end
 
+    input('Press ENTER to end the record')
+%     pause(length(sk_sync)/3);
+    disp('endding the record')
+    stop(audio_rx)
+    
     r_temp = 9*getaudiodata(audio_rx)';
 
     figure()
@@ -205,6 +224,7 @@ end
 %% Channel
 
 if audio_recover
+    disp("received via audio")
     r = r_temp;
 else
     % real valued noise
