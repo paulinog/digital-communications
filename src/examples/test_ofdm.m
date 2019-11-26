@@ -6,20 +6,19 @@ numSymbol = 80; % TODO: verificar se numSymbol for multiplo de 8
 
 N = 8; % N-point FFT
 
-% fc = 128; % frequencia da portadora
-% fc = 256;
+% fc = 430; % frequencia da portadora
 fc = 1e3;
 
 fs = 8192; % frequencia de amostragem
-% fs = 1024;
 
-T = 1; % periodo do simbolo, em segundos
+% T = 1.4; % periodo do simbolo, em segundos
+T = 1;
 % R = N/T;
 
 enable_plot = false;
 
 %% Parametros do FEC
-enable_FEC = false;
+enable_FEC = true;
 trellis = poly2trellis(3, [5 7]);
 parity_ratio = 2;
 
@@ -94,7 +93,7 @@ sk = reshape(skn, [1 size(skn, 1)*size(skn, 2)]);
 
 %% TX MLS
 if enable_MLS
-    sync_vec = double((mls(k, 1) > 0.5) - (mls(k, 1) <= 0.5));
+    sync_vec = (1/2)*double((mls(k, 1) > 0.5) - (mls(k, 1) <= 0.5));
     sk_sync = [sync_vec sk sync_vec]; % concatenate
     
     num_padding_tx_mls = zero_padding(length(sk_sync), N);
@@ -182,11 +181,11 @@ r = SRF;
 % r = SRF + n;
 
 % complex noise
-snr = -40; %dB
-snr = 0;
-powerDB = 10*log10(var(SRF));
-noiseVar = 10.^(0.1*(powerDB-snr)); 
-r = awgn(SRF, snr);
+%snr = -40; %dB
+% snr = -5; %dB
+% powerDB = 10*log10(var(SRF));
+% noiseVar = 10.^(0.1*(powerDB-snr)); 
+% r = awgn(SRF, snr);
 
 % TEST channel delays
 ch_delay1 = round(100*numSymbol*rand(1)); % random spacing
@@ -198,16 +197,12 @@ r = [zeros(1, ch_delay1) r zeros(1, ch_delay2)];
 len_r = length(r);
 t_rx = 0:timestep:(len_r-1)*timestep;
 
-if enable_plot
+if enable_plot 
     figure()
-    subplot(211)
-    plot(t_rx,abs(r))
+    plot(t_rx, r)
+    title('Received signal')
+    ylabel('r(t) = s(t) + n(t)')
     xlabel('time')
-    ylabel('|r + n|')
-    subplot(212)
-    plot(t_rx,angle(r))
-    xlabel('time')
-    ylabel('\angle{r + n}')
 end 
 
 %% RX RF
@@ -219,6 +214,7 @@ if enable_MLS
     t_rx = t_rx(sample_shift:end);
 else
     phaseRF = 0;
+    sample_shift = 1;
 end
 RRF_I = r(sample_shift:end) .*cos(2*pi*fc*t_rx + phaseRF);
 RRF_Q = r(sample_shift:end) .* -sin(2*pi*fc*t_rx + phaseRF);
@@ -269,7 +265,7 @@ rk = downsample(rt, fs);
 
 %% RX Remover MLS
 if enable_MLS
-    sync_vec2 = double((mls(k, 1) > 0.5) - (mls(k, 1) <= 0.5));
+    sync_vec2 = (1/2)*double((mls(k, 1) > 0.5) - (mls(k, 1) <= 0.5));
     self_corr = xcorr(rk, sync_vec2);
     
     [pks, loc] = findpeaks(abs(self_corr), 'NPeaks', 2,'SortStr','descend');

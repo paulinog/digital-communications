@@ -95,7 +95,7 @@ sk = reshape(skn, [1 size(skn, 1)*size(skn, 2)]);
 
 %% TX MLS
 if enable_MLS
-    sync_vec = double((mls(k, 1) > 0.5) - (mls(k, 1) <= 0.5));
+    sync_vec = (1/2)*double((mls(k, 1) > 0.5) - (mls(k, 1) <= 0.5));
     sk_sync = [sync_vec sk sync_vec]; % concatenate
     
     num_padding_tx_mls = zero_padding(length(sk_sync), N);
@@ -224,7 +224,10 @@ if audio_recover
     disp("received via audio")
     r = r_temp;
 else
-    % real valued noise
+    % % noiseless
+    % r = SRF;
+
+    % % real valued noise
     % N0 = 0.8*max(st);
     % n = N0*rand(1, length(t));
     % r = SRF + n;
@@ -248,16 +251,12 @@ end
 len_r = length(r);
 t_rx = 0:timestep:(len_r-1)*timestep;
 
-if enable_plot
+if enable_plot 
     figure()
-    subplot(211)
-    plot(t_rx,abs(r))
+    plot(t_rx, r)
+    title('Received signal')
+    ylabel('r(t) = s(t) + n(t)')
     xlabel('time')
-    ylabel('|r + n|')
-    subplot(212)
-    plot(t_rx,angle(r))
-    xlabel('time')
-    ylabel('\angle{r + n}')
 end 
 
 %% RX RF
@@ -269,6 +268,7 @@ if enable_MLS
     t_rx = t_rx(sample_shift:end);
 else
     phaseRF = 0;
+    sample_shift = 1;
 end
 RRF_I = r(sample_shift:end) .*cos(2*pi*fc*t_rx + phaseRF);
 RRF_Q = r(sample_shift:end) .* -sin(2*pi*fc*t_rx + phaseRF);
@@ -285,8 +285,8 @@ end
 
 %% RX LP
 [num, den] = butter(10, fc*2*timestep, 'low');
-LP_I = filtfilt(num, den, double(RRF_I)) * 2;
-LP_Q = filtfilt(num, den, double(RRF_Q)) * 2;
+LP_I = filtfilt(num, den, RRF_I) * 2;
+LP_Q = filtfilt(num, den, RRF_Q) * 2;
 
 if enable_plot
     figure()
@@ -319,7 +319,7 @@ rk = downsample(rt, fs);
 
 %% RX Remover MLS
 if enable_MLS
-    sync_vec2 = double((mls(k, 1) > 0.5) - (mls(k, 1) <= 0.5));
+    sync_vec2 = (1/2)*double((mls(k, 1) > 0.5) - (mls(k, 1) <= 0.5));
     self_corr = xcorr(rk, sync_vec2);
     
     [pks, loc] = findpeaks(abs(self_corr), 'NPeaks', 2,'SortStr','descend');
