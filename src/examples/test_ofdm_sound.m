@@ -7,14 +7,20 @@ numSymbol = 80; % TODO: verificar se numSymbol for multiplo de 8
 N = 8; % N-point FFT
 
 % fc = 128; % frequencia da portadora
-fc = 1024;
+fc = 440;
 
 fs = 8192; % frequencia de amostragem
 % fs = 1024;
 
-T = 1; % periodo do simbolo, em segundos
+T = 1.3653; % periodo do simbolo, em segundos
 % R = N/T;
 
+% gravador de audio
+audio_enable = true;
+% true: *.wav file, false: loopback
+audio_file_nloopback = false; 
+
+% mostra todas as figuras
 enable_plot = false;
 
 %% Parametros do FEC
@@ -24,7 +30,7 @@ parity_ratio = 2;
 
 %% Parametros do MLS
 enable_MLS = true;
-k = 5;
+k = 4;
 sync_bits = 2^k-1;
 
 %% TX Vetor tempo
@@ -161,7 +167,7 @@ end
 %% TX Banda passante
 SRF = real(st).*cos(2*pi*fc*t_tx) - imag(st).*sin(2*pi*fc*t_tx);
 
-if enable_plot
+if 1%enable_plot
     figure()
     hold on
     plot(t_tx, real(SRF))
@@ -172,56 +178,33 @@ if enable_plot
 end
 
 %% Audio Recorder
-audio_recover = true;
-audio_loopback = false;
-audio_file = true;
-
-if audio_recover
-    numBits = 8;
+if audio_enable
+    numBits = 16;
     numChannels = 1;
     
-    if audio_loopback
-        input('Press ENTER to start the record')
+    disp('transmit ->')
+    if audio_file_nloopback
         audio_rx = audiorecorder(2/timestep, numBits, numChannels);
-        disp('starting the record')
-        record(audio_rx);
-    end
-    
-    if audio_file && ~audio_loopback
-        input('Press ENTER to create the file')
         audiowrite('audio_file.wav',SRF/16,1/timestep)
-    else
-        input('Press ENTER to start the sound')
-        sound(SRF/16, 1/timestep, numBits)
-    end
-    
-    if ~audio_loopback
-        input('Press ENTER to start the record')
-%         audio_rx = audiorecorder(frameSample, numBits, numChannels);
-        audio_rx = audiorecorder(1/timestep, numBits, numChannels);
-        disp('starting the record')
+        input('Press ENTER to start recording')
         record(audio_rx);
+        input('Press ENTER to stop')
+    else
+        audio_rx = audiorecorder(1/timestep, numBits, numChannels);
+        tic
+        disp('Start recording audio')
+        record(audio_rx);
+        sound(SRF/16, 1/timestep, numBits)
+        pause(t(end) + 0.1); % delay
+        toc
     end
-
-    input('Press ENTER to end the record')
-%     pause(length(sk_sync)/3);
-    disp('endding the record')
+    disp('receive <-')
     stop(audio_rx)
+    disp('Processing...')
     
-    r_temp = 9*getaudiodata(audio_rx)';
-
-    figure()
-    plot(SRF);
-    figure()
-    plot(r_temp);
-end
-
-%% Channel
-
-if audio_recover
-    disp("received via audio")
-    r = r_temp;
+    r = 9*getaudiodata(audio_rx)';
 else
+    %% Channel
     % % noiseless
     % r = SRF;
 
@@ -249,7 +232,7 @@ end
 len_r = length(r);
 t_rx = 0:timestep:(len_r-1)*timestep;
 
-if enable_plot 
+if 1%enable_plot 
     figure()
     plot(t_rx, r)
     title('Received signal')
