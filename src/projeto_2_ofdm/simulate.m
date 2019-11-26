@@ -339,7 +339,7 @@ else
     end_frame = length(rk);
     frame_size = end_frame - start_frame + 1;
 end
-rk_enc = rk(start_frame : end_frame);
+rk_sync = rk(start_frame : end_frame);
 
 % disp('R_start =')
 % disp(start_frame)
@@ -349,11 +349,11 @@ rk_enc = rk(start_frame : end_frame);
 % disp(frame_size)
 
 %% RX Serial para paralelo
-num_padding_rx_mls = zero_padding(length(rk_enc), N);
+num_padding_rx_mls = zero_padding(length(rk_sync), N);
 if num_padding_rx_mls > 0
-    rk_enc = [rk_enc zeros(1, num_padding_rx_mls)];
+    rk_sync = [rk_sync zeros(1, num_padding_rx_mls)];
 end
-rkn = reshape(rk_enc, [N length(rk_enc)/N]);
+rkn = reshape(rk_sync, [N length(rk_sync)/N]);
 
 %% RX OFDM Demux
 % yn = sign(real(fft( rkn, N )));
@@ -363,11 +363,11 @@ yn = fft( rkn, N );
 y = reshape(yn, [1 size(yn, 1)*size(yn, 2)]);
 
 %% RX Slicer
-z_sync = (y > 0);
+z_enc = (y > 0);
 
 if enable_plot
     figure()
-    stem(z_sync)
+    stem(z_enc)
     title('RX')
     xlabel('samples')
     ylabel('z')
@@ -375,9 +375,9 @@ end
 
 %% RX FEC
 if enable_FEC
-    z = vitdec(z_sync, trellis, 20,  'trunc', 'hard');
+    z = vitdec(z_enc, trellis, 20,  'trunc', 'hard');
 else
-    z = z_sync;
+    z = z_enc;
 end
 
 %% Demapeador
