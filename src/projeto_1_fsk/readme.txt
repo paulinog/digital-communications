@@ -26,3 +26,6 @@ OBS. Não é necessário habilitar o loopback na placa de som. Apenas abra o MATLAB
 
 1. Primeiro, execute o script "transmitter.m", e grave o áudio com o dispositivo externo
 2. Depois, execute o script "receiver.m" para gravar o áudio e demodular e decodificar a informação
+
+---
+Campinas, 12 de novembro de 2019

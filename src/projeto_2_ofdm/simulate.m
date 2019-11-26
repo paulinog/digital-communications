@@ -10,13 +10,8 @@ disp('Acoustic OFDM Modulator')
 
 %% Parametros de usuario
 N = 8; % N-point FFT
-
-% fc = 128; % frequencia da portadora
-fc = 440;
-
-fs = 8192; % frequencia de amostragem
-% fs = 1024;
-
+fc = 440; % frequencia da portadora, em Hz
+fs = 8192; % frequencia de amostragem, em Hz
 T = 1.3653; % periodo do simbolo, em segundos
 % R = N/T;
 
@@ -35,7 +30,7 @@ parity_ratio = 2;
 
 %% Parametros do MLS
 enable_MLS = true;
-k = 4;
+k = 5;
 sync_bits = 2^k-1;
 
 %% Fonte
@@ -51,8 +46,8 @@ input_bin = str_source(input_str);
 
 %% Mapeador
 a = mapper(input_bin, [0 1]);
-numSymbol = length(a);
-disp(['Number of bits sent:' num2str(numSymbol)]);
+numBits = length(a);
+disp(['Number of bits sent:' num2str(numBits)]);
 
 if enable_plot
     figure()
@@ -64,7 +59,7 @@ end
 %% TX Vetor tempo
 timestep = T/(N*fs);
 
-frame_size = numSymbol;
+frame_size = numBits;
 if enable_FEC
     frame_size = frame_size * parity_ratio;
 end
@@ -199,20 +194,21 @@ end
 if audio_enable
     numBits = 16;
     numChannels = 1;
+    Fs = round(1/timestep);
     
     disp('transmit ->')
     if audio_file_nloopback
-        audio_rx = audiorecorder(2/timestep, numBits, numChannels);
-        audiowrite('audio_file.wav',SRF/16,1/timestep)
+        audio_rx = audiorecorder(Fs, numBits, numChannels);
+        audiowrite('audio_file.wav', SRF/16, Fs)
         input('Press ENTER to start recording')
         record(audio_rx);
         input('Press ENTER to stop')
     else
-        audio_rx = audiorecorder(1/timestep, numBits, numChannels);
+        audio_rx = audiorecorder(Fs, numBits, numChannels);
         tic
         disp('Start recording audio')
         record(audio_rx);
-        sound(SRF/16, 1/timestep, numBits)
+        sound(SRF/16, Fs, numBits)
         pause(t(end) + 0.1); % delay
         toc
     end
@@ -240,8 +236,8 @@ else
     r = awgn(SRF, snr);
 
     % TEST channel delays
-    ch_delay1 = round(100*numSymbol*rand(1)); % random spacing
-    ch_delay2 = round(100*numSymbol*rand(1));
+    ch_delay1 = round(100*numBits*rand(1)); % random spacing
+    ch_delay2 = round(100*numBits*rand(1));
     % r = [zeros(1, ch_delay1) r];
     r = [zeros(1, ch_delay1) r zeros(1, ch_delay2)];
 end
@@ -326,7 +322,7 @@ if enable_MLS
     end_frame = max(loc) - length(rk);
     frame_size = end_frame - start_frame + 1;
     
-    if enable_plot
+    if 1%enable_plot
         figure()
         hold on
         plot(abs(self_corr));

@@ -11,3 +11,7 @@ Simulador
 =========
 Passos:
 	1. Executar o arquivo simulate_cdma.m
+
+
+---
+Campinas, 26 de novembro de 2019
