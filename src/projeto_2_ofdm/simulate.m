@@ -1,9 +1,14 @@
+%% Projeto Final - Parte 2
+% Disciplina IE533A, 2s2019 (FEEC/UNICAMP)
+% Guilherme Paulino, RA 117119
+clc;
+clearvars;
 close all;
-clc; clearvars; 
-disp('OFDM example')
-%% User parameters
-numSymbol = 80;
 
+disp('Final Project IE533 - Part 2')
+disp('Acoustic OFDM Modulator')
+
+%% Parametros de usuario
 N = 8; % N-point FFT
 
 % fc = 128; % frequencia da portadora
@@ -33,6 +38,29 @@ enable_MLS = true;
 k = 4;
 sync_bits = 2^k-1;
 
+%% Fonte
+% 1) Entrada de texto pelo usuario
+% disp('Enter text:');
+% input_str = input('','s');
+
+% 2) Entrada de teste
+input_str = 'abcdefghijklmnopqrstuvxzwyABCDEFGHIJKLMNOPQRSTUVXZWY1234567890';
+
+%% Vetor binario
+input_bin = str_source(input_str);
+
+%% Mapeador
+a = mapper(input_bin, [0 1]);
+numSymbol = length(a);
+disp(['Number of bits sent:' num2str(numSymbol)]);
+
+if enable_plot
+    figure()
+    stem(a)
+    title('TX')
+    xlabel('samples')
+end
+
 %% TX Vetor tempo
 timestep = T/(N*fs);
 
@@ -50,16 +78,6 @@ end
 tmax = frame_size*T/N;
 t = 0:timestep:tmax-timestep;
 t_pt = -tmax/2:timestep:tmax/2-timestep;
-
-%% TX Fonte
-a = randsrc(1, numSymbol, [0 1]);
-
-if enable_plot
-    figure()
-    stem(a)
-    title('TX')
-    xlabel('samples')
-end
 
 %% TX FEC
 if enable_FEC
@@ -140,7 +158,7 @@ if enable_plot
     title('Pulse shapper function')
 end
 
-%% TX Banda base
+%% TX OFDM Banda base
 st = conv (sk_up, pt, 'same');
 
 if enable_plot
@@ -164,7 +182,7 @@ if enable_plot
     ylabel('s(t)')
 end
 
-%% TX Banda passante
+%% TX OFDM Banda passante
 SRF = real(st).*cos(2*pi*fc*t_tx) - imag(st).*sin(2*pi*fc*t_tx);
 
 if 1%enable_plot
@@ -366,7 +384,20 @@ else
     z = z_sync;
 end
 
-%% RX BER
+%% Demapeador
+output_bin = demapper(z, [0 1]);
+
+%% RX Destino
+output_str = str_dest(output_bin);
+% Mostra a saida de texto
+disp('-----')
+disp('Output text:');
+fprintf('%s', output_str)
+
+%% BER
+disp(' ')
+disp('-----')
+% Calcula a taxa de erro de bit
 if length(z) >= length(a)
     err = sum(a ~= z(1:length(a)));
     if (err > 0)
