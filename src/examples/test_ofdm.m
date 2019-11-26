@@ -105,7 +105,7 @@ else
 end
 
 %% TX Upsample
-sk_up = upsample(sk_sync, fs);
+sk_up = upsample(sk_sync, fs, fs/2);
 t_tx = 0:timestep:(length(sk_up)-1)*timestep;
 
 if enable_plot
@@ -175,17 +175,17 @@ end
 % noiseless
 r = SRF;
 
-% real valued noise
+% % real valued noise
 % N0 = 0.8*max(st);
 % n = N0*rand(1, length(t));
 % r = SRF + n;
 
 % complex noise
-%snr = -40; %dB
-% snr = -5; %dB
-% powerDB = 10*log10(var(SRF));
-% noiseVar = 10.^(0.1*(powerDB-snr)); 
-% r = awgn(SRF, snr);
+% snr = -40; %dB
+snr = 0; %dB
+powerDB = 10*log10(var(SRF));
+noiseVar = 10.^(0.1*(powerDB-snr)); 
+r = awgn(SRF, snr);
 
 % TEST channel delays
 ch_delay1 = round(100*numSymbol*rand(1)); % random spacing
@@ -261,7 +261,7 @@ end
 
 %% RX OFDM downsample
 % rk_up = rt(t = kT);
-rk = downsample(rt, fs);
+rk = downsample(rt, fs, fs/2);
 
 %% RX Remover MLS
 if enable_MLS

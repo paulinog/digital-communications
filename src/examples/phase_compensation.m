@@ -13,7 +13,7 @@ RRF_Q = x .* -sin(2*pi*fc*t);
 LP_I = filtfilt(num, den, RRF_I) * 2;
 LP_Q = filtfilt(num, den, RRF_Q) * 2;
 LP = LP_I + 1j*LP_Q;
-y = downsample(LP, fs);
+y = downsample(LP, fs, fs/2);
 self_corr = xcorr(y, sync_vec);
 [abs_pks, abs_loc] = findpeaks(abs(self_corr), 'NPeaks', 2,'SortStr','descend');
 end_x = fs*(min(abs_loc) + sync_bits + 1 - length(y));
@@ -30,7 +30,7 @@ for shift_course = ceil(linspace(1, fs, points_course))
     LP_I = filtfilt(num, den, RRF_I) * 2;
     LP_Q = filtfilt(num, den, RRF_Q) * 2;
     LP = LP_I + 1j*LP_Q;
-    y = downsample(LP, fs);
+    y = downsample(LP, fs, fs/2);
     self_corr = xcorr(y, sync_vec);
     abs_pks = findpeaks(abs(self_corr), 'NPeaks', 1,'SortStr','descend');
     if max(abs_pks) > max_peak
@@ -56,7 +56,7 @@ if max_shift < fs
         LP_I = filtfilt(num, den, RRF_I) * 2;
         LP_Q = filtfilt(num, den, RRF_Q) * 2;
         LP = LP_I + 1j*LP_Q;
-        y = downsample(LP, fs);
+        y = downsample(LP, fs, fs/2);
         self_corr = xcorr(y, sync_vec);
         abs_pks = findpeaks(abs(self_corr), 'NPeaks', 1,'SortStr','descend');
         if max(abs_pks) > max_peak
@@ -76,7 +76,7 @@ t_sh = t_opt(max_shift:end);
 % LP_I = filtfilt(num, den, RRF_I) * 2;
 % LP_Q = filtfilt(num, den, RRF_Q) * 2;
 % LP = LP_I + 1j*LP_Q;
-% y = downsample(LP, fs);
+% y = downsample(LP, fs, fs/2);
 % self_corr = xcorr(y, sync_vec);
 % figure()
 % plot(abs(self_corr));
@@ -91,7 +91,7 @@ max_peak = 0;
 for phi_course = -pi : phi_step : pi
     RRF = x(max_shift:end_x) .*cos(2*pi*fc*t_sh + phi_course);
     LP = filtfilt(num, den, RRF) * 2;
-    y = downsample(LP, fs);
+    y = downsample(LP, fs, fs/2);
     self_corr = xcorr(y, sync_vec);
     pks_course = findpeaks(real(self_corr), 'NPeaks', 1,'SortStr','descend');
     if max(pks_course) > max_peak
@@ -105,7 +105,7 @@ end
 % LP_I = filtfilt(num, den, RRF_I) * 2;
 % LP_Q = filtfilt(num, den, RRF_Q) * 2;
 % LP = LP_I + 1j*LP_Q;
-% y = downsample(LP, fs);
+% y = downsample(LP, fs, fs/2);
 % self_corr = xcorr(y, sync_vec);
 % figure()
 % hold on
@@ -124,7 +124,7 @@ points = 10;
 for phi_fine = center_phi-phi_step : 2*phi_step/points : center_phi+phi_step
     RRF = x(max_shift:end_x) .*cos(2*pi*fc*t_sh + phi_fine);
     LP = filtfilt(num, den, RRF) * 2;
-    y = downsample(LP, fs);
+    y = downsample(LP, fs, fs/2);
     self_corr = xcorr(y, sync_vec);
     pks_fine = findpeaks(real(self_corr), 'NPeaks', 1,'SortStr','descend');
     if max(pks_fine) > max_peak

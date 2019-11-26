@@ -46,9 +46,7 @@ t = 0:timestep:tmax-timestep;
 t_pt = -tmax/2:timestep:tmax/2-timestep;
 
 %% TX Fonte
-% a = randsrc(1, numSymbol, [0 1]);
-a = [0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1];
-a = [a a];
+a = randsrc(1, numSymbol, [0 1]);
 
 if enable_plot
     figure()
@@ -107,7 +105,7 @@ else
 end
 
 %% TX Upsample
-sk_up = upsample(sk_sync, fs);
+sk_up = upsample(sk_sync, fs, fs/2);
 t_tx = 0:timestep:(length(sk_up)-1)*timestep;
 
 if enable_plot
@@ -315,7 +313,7 @@ end
 
 %% RX OFDM downsample
 % rk_up = rt(t = kT);
-rk = downsample(rt, fs);
+rk = downsample(rt, fs, fs/2);
 
 %% RX Remover MLS
 if enable_MLS
