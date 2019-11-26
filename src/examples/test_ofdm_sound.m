@@ -7,8 +7,6 @@ numSymbol = 80; % TODO: verificar se numSymbol for multiplo de 8
 N = 8; % N-point FFT
 
 % fc = 128; % frequencia da portadora
-% fc = 256;
-% fc = 1e3;
 fc = 1024;
 
 fs = 8192; % frequencia de amostragem
@@ -48,7 +46,9 @@ t = 0:timestep:tmax-timestep;
 t_pt = -tmax/2:timestep:tmax/2-timestep;
 
 %% TX Fonte
-a = randsrc(1, numSymbol, [0 1]);
+% a = randsrc(1, numSymbol, [0 1]);
+a = [0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1];
+a = [a a];
 
 if enable_plot
     figure()
@@ -181,29 +181,26 @@ audio_file = true;
 if audio_recover
     numBits = 8;
     numChannels = 1;
-    frameSample = 16*8192;
     
     if audio_loopback
         input('Press ENTER to start the record')
-%         audio_rx = audiorecorder(frameSample, numBits, numChannels);
-        audio_rx = audiorecorder(1/timestep, numBits, numChannels);
+        audio_rx = audiorecorder(2/timestep, numBits, numChannels);
         disp('starting the record')
         record(audio_rx);
     end
     
-    if audio_file
+    if audio_file && ~audio_loopback
         input('Press ENTER to create the file')
-%         audiowrite('audio_file.wav',SRF/16,frameSample)
         audiowrite('audio_file.wav',SRF/16,1/timestep)
     else
         input('Press ENTER to start the sound')
-        sound(SRF/16, frameSample, numBits)
-%         sound(SRF/8, 1/timestep, numBits)
+        sound(SRF/16, 1/timestep, numBits)
     end
     
     if ~audio_loopback
         input('Press ENTER to start the record')
-        audio_rx = audiorecorder(frameSample, numBits, numChannels);
+%         audio_rx = audiorecorder(frameSample, numBits, numChannels);
+        audio_rx = audiorecorder(1/timestep, numBits, numChannels);
         disp('starting the record')
         record(audio_rx);
     end
